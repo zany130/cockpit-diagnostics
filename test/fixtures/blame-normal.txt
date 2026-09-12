@@ -1,0 +1,4 @@
+          4.123s NetworkManager.service
+          1.234s firewalld.service
+           892ms systemd-udev-settle.service
+            12ms systemd-udevd.service

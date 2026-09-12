@@ -1,0 +1,19 @@
+systemd-analyze [OPTIONS...] COMMAND ...
+
+Profile systemd, show unit dependencies, check unit files.
+
+Commands:
+  [time]                     Print time required to boot the machine
+  blame                      Print list of running units ordered by
+                             time to init
+  critical-chain [UNIT...]   Print a tree of the time critical chain
+                             of units
+  plot                       Output SVG graphic showing service
+                             initialization
+  security [UNIT...]         Analyze security of unit
+
+     --json=pretty|short|off Generate JSON output of the security
+                             analysis table, or plot's raw time data
+     --no-pager              Do not pipe output into a pager
+  -h --help                  Show this help
+     --version               Show package version

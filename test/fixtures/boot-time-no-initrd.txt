@@ -1,0 +1,1 @@
+Startup finished in 1.234s (kernel) + 2.345s (userspace) = 3.579s

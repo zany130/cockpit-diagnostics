@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedSideEffectImports": false,
+    "jsx": "react",
+    "lib": [
+      "dom",
+      "es2020"
+    ],
+    "paths": {
+        "*": ["./pkg/lib/*"]
+    },
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "strict": true,
+    "target": "es2020",
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/**/*",
+    "test/**/*",
+    "preview/**/*",
+    "vitest.config.ts"
+  ],
+  "exclude": [
+    "test/common",
+    "pkg",
+    "node_modules",
+    "dist",
+    "tools"
+  ]
+}

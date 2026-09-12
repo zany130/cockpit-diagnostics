@@ -1,0 +1,3 @@
+[0;1;31mgraphical.target[0m @47.847s
+└─[0;1;32mmulti-user.target[0m @47.746s
+  └─NetworkManager.service @45.123s +2.500s

@@ -1,0 +1,16 @@
+[
+  {
+    "unit": "foo.service",
+    "load": "loaded",
+    "active": "failed",
+    "sub": "failed",
+    "description": "Foo Service"
+  },
+  {
+    "unit": "bar.mount",
+    "load": "loaded",
+    "active": "failed",
+    "sub": "dead",
+    "description": "Bar Mount"
+  }
+]

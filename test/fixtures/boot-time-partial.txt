@@ -1,0 +1,1 @@
+Startup finished in 2.584s (kernel) + garbled + 47.847s (userspace) = 50.431s

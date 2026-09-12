@@ -1,0 +1,9 @@
+Id=foo.service
+Result=exit-code
+ExecMainStatus=1
+InactiveEnterTimestamp=Sat 2026-09-12 12:00:00 UTC
+
+Id=bar.mount
+Result=resources
+ExecMainStatus=0
+InactiveEnterTimestamp=n/a

@@ -1,0 +1,2 @@
+foo.service loaded failed failed Foo Service
+bar.mount loaded failed failed Bar Mount

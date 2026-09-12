@@ -1,0 +1,31 @@
+# diagnostics German translations
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: diagnostics 0.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-12 16:09+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1\n"
+
+#: src/index.html:20 src/manifest.json:0 org.cockpit_project.diagnostics.metainfo.xml:5
+msgid "Diagnostics"
+msgstr "Diagnose"
+
+#: src/app.tsx
+msgid "Overview"
+msgstr "Übersicht"
+
+#: src/app.tsx
+msgid "Boot"
+msgstr "Startvorgang"
+
+#: org.cockpit_project.diagnostics.metainfo.xml:6
+msgid "systemd boot and unit diagnostics for Cockpit"
+msgstr "systemd-Start- und Einheiten-Diagnose für Cockpit"

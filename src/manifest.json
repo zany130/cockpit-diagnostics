@@ -1,0 +1,16 @@
+{
+    "requires": {
+        "cockpit": "137"
+    },
+    "tools": {
+        "index": {
+            "label": "Diagnostics",
+            "order": 85,
+            "keywords": [
+                {
+                    "matches": ["boot", "systemd", "blame", "failed units", "critical chain"]
+                }
+            ]
+        }
+    }
+}

@@ -1,0 +1,36 @@
+// SPDX-License-Identifier: LGPL-2.1-or-later
+@use "page.scss";
+
+.diagnostics-loading {
+    display: flex;
+    align-items: center;
+    min-height: 4rem;
+}
+
+.diagnostics-overview-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--pf-t--global--spacer--md);
+}
+
+@media (width >= 768px) {
+    .diagnostics-overview-grid {
+        grid-template-columns: 1fr 1fr;
+        align-items: start;
+    }
+}
+
+.diagnostics-chain {
+    margin: 0;
+    padding-left: 1.25rem;
+    font-family: var(--pf-t--global--font--family--mono, monospace);
+    line-height: 1.6;
+}
+
+.diagnostics-chain-unit {
+    font-weight: 600;
+}
+
+.pf-v6-c-page__main-section {
+    padding-block-start: var(--pf-t--global--spacer--md);
+}

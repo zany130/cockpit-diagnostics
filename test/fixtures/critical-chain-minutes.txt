@@ -1,0 +1,7 @@
+The time after the unit is active or started is printed after the "@" character.
+The time the unit took to start is printed after the "+" character.
+
+multi-user.target @1min 9.608s
+└─chronyd.service @1min 7.123s +234ms
+  └─network.target @1min 6.000s
+    └─NetworkManager.service @45.123s +2.500s

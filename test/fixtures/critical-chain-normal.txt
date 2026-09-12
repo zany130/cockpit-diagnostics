@@ -1,0 +1,9 @@
+The time after the unit is active or started is printed after the "@" character.
+The time the unit took to start is printed after the "+" character.
+
+graphical.target @47.847s
+└─multi-user.target @47.746s
+  └─NetworkManager.service @45.123s +2.500s
+    └─dbus.socket @1.200s
+      └─sysinit.target @1.100s
+        └─systemd-udevd.service @234ms +12ms
