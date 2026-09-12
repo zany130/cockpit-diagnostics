@@ -10,7 +10,7 @@ import { jumpToService, jumpToUnitLogs } from "../utils/cockpitLinks";
 const _ = cockpit.gettext;
 
 export const UnitLink = ({ unit }: { unit: string }) => (
-    <Flex spaceItems={{ default: "spaceItemsSm" }}>
+    <Flex spaceItems={{ default: "spaceItemsSm" }} flexWrap={{ default: "wrap" }}>
         <FlexItem>
             <Button variant="link" isInline onClick={() => jumpToService(unit)}>
                 {cockpit.format(_("View $0 in Services"), unit)}
@@ -25,14 +25,17 @@ export const UnitLink = ({ unit }: { unit: string }) => (
 );
 
 export const UnitActions = ({ unit }: { unit: string }) => (
-    <Flex spaceItems={{ default: "spaceItemsMd" }}>
+    <Flex
+        direction={{ default: "column" }}
+        spaceItems={{ default: "spaceItemsXs" }}
+    >
         <FlexItem>
-            <Button variant="secondary" onClick={() => jumpToService(unit)}>
+            <Button variant="link" isInline onClick={() => jumpToService(unit)}>
                 {_("View service")}
             </Button>
         </FlexItem>
         <FlexItem>
-            <Button variant="secondary" onClick={() => jumpToUnitLogs(unit)}>
+            <Button variant="link" isInline onClick={() => jumpToUnitLogs(unit)}>
                 {_("View logs")}
             </Button>
         </FlexItem>

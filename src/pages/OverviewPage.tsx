@@ -71,7 +71,7 @@ export const OverviewPage = ({ capabilities, onRefresh, lastRefreshed }: {
                 </Alert>
             )}
 
-            <Grid hasGutter>
+            <Grid hasGutter className="diagnostics-grid">
                 <GridItem md={6}>
                     <BootOverviewCard
                         capabilities={capabilities}
