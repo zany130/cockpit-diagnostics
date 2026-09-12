@@ -1,5 +1,9 @@
 const listeners = new Map<string, Set<() => void>>();
 
+function dispatch(name: string): void {
+    listeners.get(name)?.forEach(listener => listener());
+}
+
 const cockpit = {
     hidden: false,
     language: "en",
@@ -10,6 +14,13 @@ const cockpit = {
         href: "/",
         go(path: string[] | string) {
             this.path = Array.isArray(path) ? path : path.split("/").filter(Boolean);
+            this.href = "/" + this.path.join("/");
+            if (typeof window !== "undefined") {
+                const hash = this.path.length > 0 ? "#/" + this.path.join("/") : "#/";
+                if (window.location.hash !== hash)
+                    window.location.hash = hash;
+            }
+            dispatch("locationchanged");
         },
         replace(path: string[] | string) {
             this.go(path);

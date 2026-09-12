@@ -9,22 +9,26 @@ import cockpit from "cockpit";
 
 import type { DiagnosticCapabilities } from "./types/diagnostics";
 import { detectCapabilities } from "./providers/capabilities";
-import { goToPage, pageFromPath, type DiagnosticsPage } from "./app/routes";
+import { currentPage, goToPage, type DiagnosticsPage } from "./app/routes";
 import { BootPage } from "./pages/BootPage";
 import { OverviewPage } from "./pages/OverviewPage";
 
 const _ = cockpit.gettext;
 
 export const Application = () => {
-    const [page, setPage] = useState<DiagnosticsPage>(() => pageFromPath(cockpit.location.path));
+    const [page, setPage] = useState<DiagnosticsPage>(() => currentPage());
     const [capabilities, setCapabilities] = useState<DiagnosticCapabilities | null>(null);
     const [capabilitiesError, setCapabilitiesError] = useState<string | null>(null);
     const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
 
     useEffect(() => {
-        const onLocation = () => setPage(pageFromPath(cockpit.location.path));
+        const onLocation = () => setPage(currentPage());
         cockpit.addEventListener("locationchanged", onLocation);
-        return () => cockpit.removeEventListener("locationchanged", onLocation);
+        window.addEventListener("hashchange", onLocation);
+        return () => {
+            cockpit.removeEventListener("locationchanged", onLocation);
+            window.removeEventListener("hashchange", onLocation);
+        };
     }, []);
 
     useEffect(() => {
@@ -50,7 +54,7 @@ export const Application = () => {
                 <Nav variant="horizontal" aria-label={_("Diagnostics")}>
                     <NavList>
                         <NavItem
-                            to="#"
+                            to="#/"
                             isActive={page === "overview"}
                             onClick={event => {
                                 event.preventDefault();
@@ -60,7 +64,7 @@ export const Application = () => {
                             {_("Overview")}
                         </NavItem>
                         <NavItem
-                            to="#"
+                            to="#/boot"
                             isActive={page === "boot"}
                             onClick={event => {
                                 event.preventDefault();
