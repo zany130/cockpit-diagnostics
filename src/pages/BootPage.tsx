@@ -3,20 +3,28 @@ import React, { useMemo, useState } from "react";
 import { Alert } from "@patternfly/react-core/dist/esm/components/Alert/index.js";
 import { Button } from "@patternfly/react-core/dist/esm/components/Button/index.js";
 import { Card, CardBody, CardHeader, CardTitle } from "@patternfly/react-core/dist/esm/components/Card/index.js";
+import { Content } from "@patternfly/react-core/dist/esm/components/Content/index.js";
 import { DescriptionList, DescriptionListDescription, DescriptionListGroup, DescriptionListTerm } from "@patternfly/react-core/dist/esm/components/DescriptionList/index.js";
-import { Flex, FlexItem } from "@patternfly/react-core/dist/esm/layouts/Flex/index.js";
+import { HelperText, HelperTextItem } from "@patternfly/react-core/dist/esm/components/HelperText/index.js";
+import { Label } from "@patternfly/react-core/dist/esm/components/Label/index.js";
 import { PageSection } from "@patternfly/react-core/dist/esm/components/Page/index.js";
+import { Popover } from "@patternfly/react-core/dist/esm/components/Popover/index.js";
 import { Title } from "@patternfly/react-core/dist/esm/components/Title/index.js";
+import { TreeView, type TreeViewDataItem } from "@patternfly/react-core/dist/esm/components/TreeView/index.js";
+import { Flex, FlexItem } from "@patternfly/react-core/dist/esm/layouts/Flex/index.js";
 import { SortByDirection, Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
+import InfoCircleIcon from "@patternfly/react-icons/dist/esm/icons/info-circle-icon";
 
 import cockpit from "cockpit";
 
 import { flattenCriticalChain, type BootSummary, type CriticalChainNode, type CriticalPathMark, type UnitActivationTiming } from "../types/boot";
 import type { DiagnosticCapabilities } from "../types/diagnostics";
 import { loadBlame, loadBootSummary, loadCriticalChain } from "../providers/systemdAnalyze";
-import { formatDuration, formatDurationExact } from "../utils/duration";
+import { formatDuration } from "../utils/duration";
 import { AsyncState } from "../components/AsyncState";
 import { CapabilityNotice } from "../components/CapabilityNotice";
+import { DurationText } from "../components/DurationText";
+import { PageHeader } from "../components/PageHeader";
 import { UnitLink } from "../components/UnitLink";
 import { useAsyncProvider } from "../app/useAsyncProvider";
 
@@ -41,30 +49,37 @@ export const BootPage = ({ capabilities, onRefresh, lastRefreshed }: {
     };
 
     return (
-        <PageSection>
-            <Flex justifyContent={{ default: "justifyContentSpaceBetween" }} alignItems={{ default: "alignItemsCenter" }}>
+        <PageSection isWidthLimited>
+            <PageHeader
+                title={_("Boot")}
+                titleId="diagnostics-boot"
+                lastRefreshed={lastRefreshed}
+                onRefresh={refreshAll}
+            />
+
+            <Flex className="pf-v6-u-mb-md" spaceItems={{ default: "spaceItemsSm" }} alignItems={{ default: "alignItemsCenter" }}>
                 <FlexItem>
-                    <Title headingLevel="h2" id="diagnostics-boot">{_("Boot")}</Title>
+                    <Content component="p" className="pf-v6-u-mb-0">
+                        {_("Current boot: total time, parallel unit activation, and systemd's critical-path estimate.")}
+                    </Content>
                 </FlexItem>
                 <FlexItem>
-                    <Flex spaceItems={{ default: "spaceItemsMd" }} alignItems={{ default: "alignItemsCenter" }}>
-                        {lastRefreshed && (
-                            <span className="pf-v6-u-color-200">
-                                {cockpit.format(_("Last refreshed $0"), lastRefreshed.toLocaleString())}
-                            </span>
-                        )}
-                        <Button variant="secondary" onClick={refreshAll}>{_("Refresh")}</Button>
-                    </Flex>
+                    <Popover
+                        headerContent={_("How to read these views")}
+                        bodyContent={_("Total boot timing is how long firmware, the kernel, and userspace took. Unit activation duration is how long each unit spent activating, which happens in parallel. The critical boot path is systemd's estimate of the chain that had to finish before the default target.")}
+                    >
+                        <Button variant="link" isInline icon={<InfoCircleIcon />}>
+                            {_("About these views")}
+                        </Button>
+                    </Popover>
                 </FlexItem>
             </Flex>
 
-            <p className="pf-v6-u-mt-sm pf-v6-u-mb-lg">
-                {_("These three views answer different questions. Total boot timing is how long firmware, the kernel, and userspace took. Unit activation duration is how long each unit spent activating, which happens in parallel. The critical boot path is systemd's estimate of the chain that had to finish before the default target.")}
-            </p>
-
-            <BootTimingCard capabilities={capabilities} state={time} />
-            <BlameCard capabilities={capabilities} blame={blame} chain={chain} />
-            <CriticalChainCard capabilities={capabilities} state={chain} />
+            <div className="diagnostics-stack">
+                <BootTimingCard capabilities={capabilities} state={time} />
+                <BlameCard capabilities={capabilities} blame={blame} chain={chain} />
+                <CriticalChainCard capabilities={capabilities} state={chain} />
+            </div>
         </PageSection>
     );
 };
@@ -76,9 +91,11 @@ const BootTimingCard = ({
     capabilities: DiagnosticCapabilities;
     state: ReturnType<typeof useAsyncProvider<BootSummary>>;
 }) => (
-    <Card className="pf-v6-u-mb-md" isPlain>
+    <Card isCompact>
         <CardHeader>
-            <CardTitle>{_("Total boot timing")}</CardTitle>
+            <CardTitle>
+                <Title headingLevel="h3" size="md">{_("Total boot timing")}</Title>
+            </CardTitle>
         </CardHeader>
         <CardBody>
             {!capabilities.systemdAnalyze || !capabilities.systemdAnalyzeTime
@@ -107,19 +124,32 @@ const BootPhaseList = ({ summary }: { summary: BootSummary }) => {
         { label: _("Kernel"), value: summary.kernelUs },
         { label: _("Initrd"), value: summary.initrdUs },
         { label: _("Userspace"), value: summary.userspaceUs },
-        { label: _("Total"), value: summary.totalUs },
     ];
     const visible = phases.filter(phase => phase.value !== undefined);
 
     return (
         <>
-            <p className="pf-v6-u-mb-md">
-                {_("Values come from systemd-analyze time for the current boot. Virtual machines and containers often omit firmware or loader phases.")}
-            </p>
-            {visible.length === 0
+            {summary.totalUs !== undefined && (
+                <div className="diagnostics-boot-total">
+                    <Content component="small" className="pf-v6-u-color-200">{_("Total boot time")}</Content>
+                    <div className="diagnostics-boot-total-value">
+                        <DurationText valueUs={summary.totalUs} />
+                    </div>
+                </div>
+            )}
+            <HelperText className="pf-v6-u-mb-md">
+                <HelperTextItem>
+                    {_("From systemd-analyze time for the current boot. Virtual machines and containers often omit firmware or loader.")}
+                </HelperTextItem>
+            </HelperText>
+            {visible.length === 0 && summary.totalUs === undefined
                 ? <p>{_("No boot-phase timings were reported.")}</p>
                 : (
-                    <DescriptionList isHorizontal>
+                    <DescriptionList
+                        isCompact
+                        isHorizontal
+                        columnModifier={{ default: "1Col", sm: "2Col", lg: "3Col" }}
+                    >
                         {visible.map(phase => (
                             <DescriptionListGroup key={phase.label}>
                                 <DescriptionListTerm>{phase.label}</DescriptionListTerm>
@@ -131,14 +161,14 @@ const BootPhaseList = ({ summary }: { summary: BootSummary }) => {
                         {summary.target && (
                             <DescriptionListGroup>
                                 <DescriptionListTerm>{_("Default target")}</DescriptionListTerm>
+                                <DescriptionListDescription>{summary.target}</DescriptionListDescription>
+                            </DescriptionListGroup>
+                        )}
+                        {summary.targetReachedUs !== undefined && (
+                            <DescriptionListGroup>
+                                <DescriptionListTerm>{_("Target reached")}</DescriptionListTerm>
                                 <DescriptionListDescription>
-                                    {summary.target}
-                                    {summary.targetReachedUs !== undefined && (
-                                        <>
-                                            {" — "}
-                                            {cockpit.format(_("reached after $0"), formatDuration(summary.targetReachedUs))}
-                                        </>
-                                    )}
+                                    {cockpit.format(_("after $0"), formatDuration(summary.targetReachedUs))}
                                 </DescriptionListDescription>
                             </DescriptionListGroup>
                         )}
@@ -164,18 +194,21 @@ const BlameCard = ({
     }, [chain.status, chain.data]);
 
     return (
-        <Card className="pf-v6-u-mb-md" isPlain>
+        <Card isCompact>
             <CardHeader>
-                <CardTitle>{_("Unit activation duration")}</CardTitle>
+                <CardTitle>
+                    <Title headingLevel="h3" size="md">{_("Unit activation duration")}</Title>
+                </CardTitle>
             </CardHeader>
             <CardBody>
                 <Alert
                     className="pf-v6-u-mb-md"
                     variant="info"
                     isInline
+                    isPlain
                     title={_("Activation time is not the same as boot delay")}
                 >
-                    {_("systemd-analyze blame lists how long each unit spent in the activating state. Units start in parallel, so the slowest unit here did not necessarily delay boot. Some unit types never pass through an activating state and are not measured usefully by blame.")}
+                    {_("Units start in parallel, so the slowest unit here did not necessarily delay boot. Some unit types never pass through an activating state and are not measured usefully by blame.")}
                 </Alert>
                 {!capabilities.systemdAnalyze || !capabilities.systemdAnalyzeBlame
                     ? (
@@ -235,65 +268,69 @@ const BlameTable = ({
 
     return (
         <>
-            <Table variant="compact" aria-label={_("Unit activation timings")}>
-                <Thead>
-                    <Tr>
-                        <Th
-                            sort={{
-                                sortBy: { index: sortIndex, direction: sortDirection },
-                                onSort: (_event, index, direction) => {
-                                    setSortIndex(index);
-                                    setSortDirection(direction);
-                                },
-                                columnIndex: 0,
-                            }}
-                        >
-                            {_("Unit")}
-                        </Th>
-                        <Th
-                            sort={{
-                                sortBy: { index: sortIndex, direction: sortDirection },
-                                onSort: (_event, index, direction) => {
-                                    setSortIndex(index);
-                                    setSortDirection(direction);
-                                },
-                                columnIndex: 1,
-                            }}
-                        >
-                            {_("Activation time")}
-                        </Th>
-                        <Th
-                            sort={{
-                                sortBy: { index: sortIndex, direction: sortDirection },
-                                onSort: (_event, index, direction) => {
-                                    setSortIndex(index);
-                                    setSortDirection(direction);
-                                },
-                                columnIndex: 2,
-                            }}
-                        >
-                            {_("On critical path")}
-                        </Th>
-                    </Tr>
-                </Thead>
-                <Tbody>
-                    {visible.map(row => {
-                        const mark = criticalMark(row.unit, criticalUnits);
-                        return (
-                            <Tr key={row.unit}>
-                                <Td dataLabel={_("Unit")}>
-                                    <div>{row.unit}</div>
-                                    <UnitLink unit={row.unit} />
-                                </Td>
-                                <Td dataLabel={_("Activation time")}>
-                                    <DurationText valueUs={row.durationUs} />
-                                </Td>
-                                <Td dataLabel={_("On critical path")}>{criticalLabel(mark)}</Td>
-                            </Tr>
-                        );
-                    })}
-                </Tbody>
-            </Table>
+            <div className="diagnostics-scroll">
+                <Table variant="compact" gridBreakPoint="grid-md" aria-label={_("Unit activation timings")}>
+                    <Thead>
+                        <Tr>
+                            <Th
+                                sort={{
+                                    sortBy: { index: sortIndex, direction: sortDirection },
+                                    onSort: (_event, index, direction) => {
+                                        setSortIndex(index);
+                                        setSortDirection(direction);
+                                    },
+                                    columnIndex: 0,
+                                }}
+                            >
+                                {_("Unit")}
+                            </Th>
+                            <Th
+                                sort={{
+                                    sortBy: { index: sortIndex, direction: sortDirection },
+                                    onSort: (_event, index, direction) => {
+                                        setSortIndex(index);
+                                        setSortDirection(direction);
+                                    },
+                                    columnIndex: 1,
+                                }}
+                            >
+                                {_("Activation time")}
+                            </Th>
+                            <Th
+                                sort={{
+                                    sortBy: { index: sortIndex, direction: sortDirection },
+                                    onSort: (_event, index, direction) => {
+                                        setSortIndex(index);
+                                        setSortDirection(direction);
+                                    },
+                                    columnIndex: 2,
+                                }}
+                            >
+                                {_("On critical path")}
+                            </Th>
+                        </Tr>
+                    </Thead>
+                    <Tbody>
+                        {visible.map(row => {
+                            const mark = criticalMark(row.unit, criticalUnits);
+                            return (
+                                <Tr key={row.unit}>
+                                    <Td dataLabel={_("Unit")}>
+                                        <div>{row.unit}</div>
+                                        <UnitLink unit={row.unit} />
+                                    </Td>
+                                    <Td dataLabel={_("Activation time")}>
+                                        <DurationText valueUs={row.durationUs} />
+                                    </Td>
+                                    <Td dataLabel={_("On critical path")}>
+                                        <CriticalPathLabel mark={mark} />
+                                    </Td>
+                                </Tr>
+                            );
+                        })}
+                    </Tbody>
+                </Table>
+            </div>
             {sorted.length > limit && (
                 <Button className="pf-v6-u-mt-md" variant="link" onClick={() => setLimit(sorted.length)}>
                     {cockpit.format(_("Show all $0 units"), String(sorted.length))}
@@ -303,6 +340,14 @@ const BlameTable = ({
     );
 };
 
+const CriticalPathLabel = ({ mark }: { mark: CriticalPathMark }) => {
+    if (mark === "yes")
+        return <Label color="green" isCompact>{_("Yes")}</Label>;
+    if (mark === "no")
+        return <Label color="grey" isCompact>{_("No")}</Label>;
+    return <Label color="blue" isCompact>{_("Unknown")}</Label>;
+};
+
 const CriticalChainCard = ({
     capabilities,
     state,
@@ -310,18 +355,21 @@ const CriticalChainCard = ({
     capabilities: DiagnosticCapabilities;
     state: ReturnType<typeof useAsyncProvider<CriticalChainNode[]>>;
 }) => (
-    <Card isPlain>
+    <Card isCompact>
         <CardHeader>
-            <CardTitle>{_("Critical boot path")}</CardTitle>
+            <CardTitle>
+                <Title headingLevel="h3" size="md">{_("Critical boot path")}</Title>
+            </CardTitle>
         </CardHeader>
         <CardBody>
             <Alert
                 className="pf-v6-u-mb-md"
                 variant="info"
                 isInline
+                isPlain
                 title={_("The critical chain is an estimate, not a complete causal proof")}
             >
-                {_("systemd-analyze critical-chain prints a tree of units on the path to the default target. Times after @ are when the unit became active or started; times after + are how long it spent activating. The output can be misleading because of parallel execution, socket activation, units that skip the activating state, and jobs or timeouts that are not represented here.")}
+                {_("Times after @ are when the unit became active or started; times after + are how long it spent activating. Parallel execution, socket activation, skipped activating states, and jobs or timeouts can make this output misleading.")}
             </Alert>
             {!capabilities.systemdAnalyze || !capabilities.systemdAnalyzeCriticalChain
                 ? (
@@ -346,42 +394,42 @@ const CriticalChainCard = ({
 );
 
 const ChainTree = ({ nodes }: { nodes: CriticalChainNode[] }) => (
-    <ul className="diagnostics-chain">
-        {nodes.map((node, index) => (
-            <li key={node.unit + String(index)}>
-                <span className="diagnostics-chain-unit">{node.unit}</span>
-                {node.activatedAtUs !== undefined && (
-                    <span title={formatDurationExact(node.activatedAtUs)}>
-                        {" @ "}{formatDuration(node.activatedAtUs)}
-                    </span>
-                )}
-                {node.activationDurationUs !== undefined && (
-                    <span title={formatDurationExact(node.activationDurationUs)}>
-                        {" + "}{formatDuration(node.activationDurationUs)}
-                    </span>
-                )}
-                {node.children.length > 0 && <ChainTree nodes={node.children} />}
-            </li>
-        ))}
-    </ul>
+    <TreeView
+        data={toTreeItems(nodes)}
+        aria-label={_("Critical boot path")}
+        hasGuides
+        defaultAllExpanded
+        variant="compactNoBackground"
+    />
 );
 
-const DurationText = ({ valueUs }: { valueUs: number }) => (
-    <span title={formatDurationExact(valueUs)}>{formatDuration(valueUs)}</span>
-);
+function toTreeItems(nodes: CriticalChainNode[], prefix = "n"): TreeViewDataItem[] {
+    return nodes.map((node, index) => {
+        const id = `${prefix}-${index}`;
+        const item: TreeViewDataItem = {
+            id,
+            name: (
+                <span className="diagnostics-chain-node">
+                    <span className="diagnostics-chain-unit">{node.unit}</span>
+                    {node.activatedAtUs !== undefined && (
+                        <Label isCompact>{`@ ${formatDuration(node.activatedAtUs)}`}</Label>
+                    )}
+                    {node.activationDurationUs !== undefined && (
+                        <Label isCompact color="blue">{`+ ${formatDuration(node.activationDurationUs)}`}</Label>
+                    )}
+                </span>
+            ),
+        };
+        if (node.children.length > 0)
+            item.children = toTreeItems(node.children, id);
+        return item;
+    });
+}
 
 function criticalMark(unit: string, criticalUnits: Set<string> | null): CriticalPathMark {
     if (!criticalUnits)
         return "unknown";
     return criticalUnits.has(unit) ? "yes" : "no";
-}
-
-function criticalLabel(mark: CriticalPathMark): string {
-    if (mark === "yes")
-        return _("Yes");
-    if (mark === "no")
-        return _("No");
-    return _("Unknown");
 }
 
 function markValue(mark: CriticalPathMark): number {

@@ -1,17 +1,21 @@
 import React from "react";
 
+import { Alert } from "@patternfly/react-core/dist/esm/components/Alert/index.js";
 import { Button } from "@patternfly/react-core/dist/esm/components/Button/index.js";
 import { Card, CardBody, CardFooter, CardHeader, CardTitle } from "@patternfly/react-core/dist/esm/components/Card/index.js";
-import { Flex, FlexItem } from "@patternfly/react-core/dist/esm/layouts/Flex/index.js";
-import { List, ListItem } from "@patternfly/react-core/dist/esm/components/List/index.js";
+import { Content } from "@patternfly/react-core/dist/esm/components/Content/index.js";
+import { DescriptionList, DescriptionListDescription, DescriptionListGroup, DescriptionListTerm } from "@patternfly/react-core/dist/esm/components/DescriptionList/index.js";
+import { HelperText, HelperTextItem } from "@patternfly/react-core/dist/esm/components/HelperText/index.js";
+import { Label } from "@patternfly/react-core/dist/esm/components/Label/index.js";
 import { PageSection } from "@patternfly/react-core/dist/esm/components/Page/index.js";
 import { Title } from "@patternfly/react-core/dist/esm/components/Title/index.js";
+import { Grid, GridItem } from "@patternfly/react-core/dist/esm/layouts/Grid/index.js";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 
 import cockpit from "cockpit";
 
 import type { BootSummary } from "../types/boot";
-import type { DiagnosticCapabilities, DiagnosticFinding, FailedUnit } from "../types/diagnostics";
+import type { DiagnosticCapabilities, FailedUnit } from "../types/diagnostics";
 import { loadBootSummary, loadCriticalChain } from "../providers/systemdAnalyze";
 import { loadFailedUnits } from "../providers/systemdUnits";
 import { formatDuration } from "../utils/duration";
@@ -20,7 +24,8 @@ import { goToPage } from "../app/routes";
 import { useAsyncProvider } from "../app/useAsyncProvider";
 import { AsyncState } from "../components/AsyncState";
 import { CapabilityNotice } from "../components/CapabilityNotice";
-import { DiagnosticStatus } from "../components/DiagnosticStatus";
+import { DurationText } from "../components/DurationText";
+import { PageHeader } from "../components/PageHeader";
 import { UnitActions } from "../components/UnitLink";
 
 const _ = cockpit.gettext;
@@ -41,81 +46,47 @@ export const OverviewPage = ({ capabilities, onRefresh, lastRefreshed }: {
         onRefresh();
     };
 
-    const findings = makeFindings(failed.data ?? []);
+    const failedCount = failed.status === "ready" ? (failed.data?.length ?? 0) : 0;
 
     return (
-        <PageSection>
-            <Flex justifyContent={{ default: "justifyContentSpaceBetween" }} alignItems={{ default: "alignItemsCenter" }}>
-                <FlexItem>
-                    <Title headingLevel="h2" id="diagnostics-overview">{_("Overview")}</Title>
-                </FlexItem>
-                <FlexItem>
-                    <Flex spaceItems={{ default: "spaceItemsMd" }} alignItems={{ default: "alignItemsCenter" }}>
-                        {lastRefreshed && (
-                            <span className="pf-v6-u-color-200">
-                                {cockpit.format(_("Last refreshed $0"), lastRefreshed.toLocaleString())}
-                            </span>
-                        )}
-                        <Button variant="secondary" onClick={refreshAll}>{_("Refresh")}</Button>
-                    </Flex>
-                </FlexItem>
-            </Flex>
+        <PageSection isWidthLimited>
+            <PageHeader
+                title={_("Overview")}
+                titleId="diagnostics-overview"
+                lastRefreshed={lastRefreshed}
+                onRefresh={refreshAll}
+            />
 
-            <SummaryCard findings={findings} failedStatus={failed.status} />
+            {failed.status === "ready" && failedCount > 0 && (
+                <Alert
+                    className="pf-v6-u-mb-md"
+                    variant="danger"
+                    isInline
+                    title={cockpit.format(
+                        cockpit.ngettext("$0 failed unit", "$0 failed units", failedCount),
+                        failedCount
+                    )}
+                >
+                    {_("systemd currently reports these units as failed.")}
+                </Alert>
+            )}
 
-            <div className="diagnostics-overview-grid">
-                <BootOverviewCard
-                    capabilities={capabilities}
-                    boot={boot}
-                    chainHeadline={chainHeadline(chain.data)}
-                    chainStatus={chain.status}
-                />
-                <FailedUnitsCard capabilities={capabilities} failed={failed} />
-            </div>
+            <Grid hasGutter>
+                <GridItem md={6}>
+                    <BootOverviewCard
+                        capabilities={capabilities}
+                        boot={boot}
+                        chainHeadline={chainHeadline(chain.data)}
+                        chainStatus={chain.status}
+                    />
+                </GridItem>
+                <GridItem md={6}>
+                    <FailedUnitsCard capabilities={capabilities} failed={failed} failedCount={failedCount} />
+                </GridItem>
+            </Grid>
         </PageSection>
     );
 };
-
-const SummaryCard = ({
-    findings,
-    failedStatus,
-}: {
-    findings: DiagnosticFinding[];
-    failedStatus: string;
-}) => (
-    <Card className="pf-v6-u-mt-md pf-v6-u-mb-md" isPlain>
-        <CardHeader>
-            <CardTitle>{_("Attention")}</CardTitle>
-        </CardHeader>
-        <CardBody>
-            {failedStatus === "loading" && <p>{_("Collecting current unit state…")}</p>}
-            {failedStatus !== "loading" && findings.length === 0 && (
-                <p>{_("No failed units are currently reported. This is a factual snapshot, not a health score.")}</p>
-            )}
-            {findings.length > 0 && (
-                <>
-                    <p className="pf-v6-u-mb-sm">
-                        {cockpit.format(
-                            cockpit.ngettext("$0 item may need attention", "$0 items may need attention", findings.length),
-                            findings.length
-                        )}
-                    </p>
-                    <List isPlain>
-                        {findings.map(finding => (
-                            <ListItem key={finding.title}>
-                                <DiagnosticStatus severity={finding.severity} />
-                                {" "}
-                                <strong>{finding.title}</strong>
-                                {" — "}
-                                {finding.summary}
-                            </ListItem>
-                        ))}
-                    </List>
-                </>
-            )}
-        </CardBody>
-    </Card>
-);
 
 const BootOverviewCard = ({
     capabilities,
@@ -128,9 +99,11 @@ const BootOverviewCard = ({
     chainHeadline?: string | undefined;
     chainStatus: string;
 }) => (
-    <Card isPlain>
+    <Card isCompact>
         <CardHeader>
-            <CardTitle>{_("Boot")}</CardTitle>
+            <CardTitle>
+                <Title headingLevel="h3" size="md">{_("Boot")}</Title>
+            </CardTitle>
         </CardHeader>
         <CardBody>
             {!capabilities.systemdAnalyze
@@ -146,30 +119,41 @@ const BootOverviewCard = ({
                         loadingLabel={_("Loading boot summary")}
                     >
                         {boot.data && (
-                            <List isPlain>
+                            <>
                                 {boot.data.totalUs !== undefined && (
-                                    <ListItem>
-                                        {cockpit.format(_("Total boot duration: $0"), formatDuration(boot.data.totalUs))}
-                                    </ListItem>
+                                    <Content component="p" className="diagnostics-overview-lead">
+                                        {cockpit.format(_("Boot completed in $0"), formatDuration(boot.data.totalUs))}
+                                    </Content>
                                 )}
-                                {boot.data.userspaceUs !== undefined && (
-                                    <ListItem>
-                                        {cockpit.format(_("Userspace: $0"), formatDuration(boot.data.userspaceUs))}
-                                    </ListItem>
-                                )}
-                                {boot.data.target && boot.data.targetReachedUs !== undefined && (
-                                    <ListItem>
-                                        {cockpit.format(
-                                            _("$0 reached after $1"),
-                                            boot.data.target,
-                                            formatDuration(boot.data.targetReachedUs)
-                                        )}
-                                    </ListItem>
-                                )}
-                                {chainStatus === "ready" && chainHeadline && (
-                                    <ListItem>{cockpit.format(_("Critical path: $0"), chainHeadline)}</ListItem>
-                                )}
-                            </List>
+                                <DescriptionList isCompact isHorizontal>
+                                    {boot.data.userspaceUs !== undefined && (
+                                        <DescriptionListGroup>
+                                            <DescriptionListTerm>{_("Userspace")}</DescriptionListTerm>
+                                            <DescriptionListDescription>
+                                                <DurationText valueUs={boot.data.userspaceUs} />
+                                            </DescriptionListDescription>
+                                        </DescriptionListGroup>
+                                    )}
+                                    {boot.data.target && boot.data.targetReachedUs !== undefined && (
+                                        <DescriptionListGroup>
+                                            <DescriptionListTerm>{_("Default target")}</DescriptionListTerm>
+                                            <DescriptionListDescription>
+                                                {cockpit.format(
+                                                    _("$0 reached after $1"),
+                                                    boot.data.target,
+                                                    formatDuration(boot.data.targetReachedUs)
+                                                )}
+                                            </DescriptionListDescription>
+                                        </DescriptionListGroup>
+                                    )}
+                                    {chainStatus === "ready" && chainHeadline && (
+                                        <DescriptionListGroup>
+                                            <DescriptionListTerm>{_("Critical path")}</DescriptionListTerm>
+                                            <DescriptionListDescription>{chainHeadline}</DescriptionListDescription>
+                                        </DescriptionListGroup>
+                                    )}
+                                </DescriptionList>
+                            </>
                         )}
                     </AsyncState>
                 )}
@@ -183,52 +167,63 @@ const BootOverviewCard = ({
 const FailedUnitsCard = ({
     capabilities,
     failed,
+    failedCount,
 }: {
     capabilities: DiagnosticCapabilities;
     failed: ReturnType<typeof useAsyncProvider<FailedUnit[]>>;
-}) => (
-    <Card isPlain>
-        <CardHeader>
-            <CardTitle>{_("Failed units")}</CardTitle>
-        </CardHeader>
-        <CardBody>
-            {!capabilities.systemctl
-                ? (
-                    <CapabilityNotice>
-                        {_("systemctl is not available, so failed units cannot be listed.")}
-                    </CapabilityNotice>
-                )
-                : (
-                    <AsyncState
-                        status={failed.status}
-                        error={failed.error}
-                        isEmpty={failed.status === "ready" && (failed.data?.length ?? 0) === 0}
-                        emptyTitle={_("No failed units")}
-                        emptyBody={_("systemd currently reports no failed units.")}
-                        loadingLabel={_("Loading failed units")}
-                    >
-                        {failed.data && failed.data.length > 0 && (
-                            <>
-                                <p className="pf-v6-u-mb-md">
-                                    {cockpit.format(
-                                        cockpit.ngettext("$0 failed unit", "$0 failed units", failed.data.length),
-                                        failed.data.length
-                                    )}
-                                </p>
-                                <FailedUnitTable units={failed.data} />
-                            </>
-                        )}
-                    </AsyncState>
+    failedCount: number;
+}) => {
+    const countLabel = failed.status === "ready" && failedCount > 0
+        ? (
+            <Label color="red">
+                {cockpit.format(
+                    cockpit.ngettext("$0 failed unit", "$0 failed units", failedCount),
+                    failedCount
                 )}
-        </CardBody>
-        <CardFooter>
-            <Button variant="link" isInline onClick={() => jumpToServices()}>{_("Open Cockpit Services")}</Button>
-        </CardFooter>
-    </Card>
-);
+            </Label>
+        )
+        : null;
+
+    return (
+        <Card isCompact>
+            <CardHeader {...(countLabel ? { actions: { hasNoOffset: true, actions: countLabel } } : {})}>
+                <CardTitle>
+                    <Title headingLevel="h3" size="md">{_("Failed units")}</Title>
+                </CardTitle>
+            </CardHeader>
+            <CardBody>
+                {!capabilities.systemctl
+                    ? (
+                        <CapabilityNotice>
+                            {_("systemctl is not available, so failed units cannot be listed.")}
+                        </CapabilityNotice>
+                    )
+                    : (
+                        <AsyncState
+                            status={failed.status}
+                            error={failed.error}
+                            isEmpty={failed.status === "ready" && failedCount === 0}
+                            emptyTitle={_("No failed units")}
+                            emptyBody={_("systemd currently reports no failed units. This is a factual snapshot, not a health score.")}
+                            loadingLabel={_("Loading failed units")}
+                        >
+                            {failed.data && failed.data.length > 0 && (
+                                <div className="diagnostics-scroll">
+                                    <FailedUnitTable units={failed.data} />
+                                </div>
+                            )}
+                        </AsyncState>
+                    )}
+            </CardBody>
+            <CardFooter>
+                <Button variant="link" isInline onClick={() => jumpToServices()}>{_("Open Cockpit Services")}</Button>
+            </CardFooter>
+        </Card>
+    );
+};
 
 export const FailedUnitTable = ({ units }: { units: FailedUnit[] }) => (
-    <Table variant="compact" aria-label={_("Failed units")}>
+    <Table variant="compact" gridBreakPoint="grid-md" aria-label={_("Failed units")}>
         <Thead>
             <Tr>
                 <Th>{_("Unit")}</Th>
@@ -243,7 +238,11 @@ export const FailedUnitTable = ({ units }: { units: FailedUnit[] }) => (
                 <Tr key={unit.unit}>
                     <Td dataLabel={_("Unit")}>
                         <div>{unit.unit}</div>
-                        {unit.description && <div className="pf-v6-u-color-200">{unit.description}</div>}
+                        {unit.description && (
+                            <HelperText>
+                                <HelperTextItem>{unit.description}</HelperTextItem>
+                            </HelperText>
+                        )}
                     </Td>
                     <Td dataLabel={_("State")}>
                         {[unit.activeState, unit.subState].filter(Boolean).join(" / ") || "—"}
@@ -270,25 +269,6 @@ function failureReason(unit: FailedUnit): string {
     if (unit.execMainStatus !== undefined)
         parts.push(cockpit.format(_("exit status $0"), String(unit.execMainStatus)));
     return parts.join(", ") || "—";
-}
-
-function makeFindings(units: FailedUnit[]): DiagnosticFinding[] {
-    if (units.length === 0)
-        return [];
-    const evidence = units.map(unit => unit.unit);
-    const finding: DiagnosticFinding = {
-        severity: "error",
-        category: "unit",
-        title: cockpit.format(
-            cockpit.ngettext("$0 failed unit", "$0 failed units", units.length),
-            units.length
-        ),
-        summary: _("systemd currently reports these units as failed."),
-        source: "systemd",
-    };
-    if (evidence.length > 0)
-        finding.evidence = evidence;
-    return [finding];
 }
 
 function chainHeadline(nodes: import("../types/boot").CriticalChainNode[] | undefined): string | undefined {

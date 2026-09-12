@@ -69,8 +69,9 @@ describe("OverviewPage", () => {
     it("renders boot facts and failed units without a health score", async () => {
         render(<OverviewPage capabilities={capabilities} onRefresh={() => undefined} />);
 
-        expect(await screen.findByText("Total boot duration: 1 min 9.608 s")).toBeInTheDocument();
-        expect(screen.getByText("Userspace: 47.847 s")).toBeInTheDocument();
+        expect(await screen.findByText("Boot completed in 1 min 9.608 s")).toBeInTheDocument();
+        expect(screen.getByText("Userspace")).toBeInTheDocument();
+        expect(screen.getByText("47.847 s")).toBeInTheDocument();
         expect(screen.getAllByText("1 failed unit").length).toBeGreaterThan(0);
         expect(screen.getByText("foo.service")).toBeInTheDocument();
         expect(screen.getByText("Foo Service")).toBeInTheDocument();
@@ -113,5 +114,17 @@ describe("OverviewPage", () => {
             />
         );
         expect(screen.getByText(/systemctl is not available/)).toBeInTheDocument();
+    });
+
+    it("places last refreshed under the title", async () => {
+        render(
+            <OverviewPage
+                capabilities={capabilities}
+                onRefresh={() => undefined}
+                lastRefreshed={new Date("2026-09-12T12:00:00Z")}
+            />
+        );
+        expect(screen.getByRole("heading", { name: "Overview" })).toBeInTheDocument();
+        expect(await screen.findByText(/Last refreshed/)).toBeInTheDocument();
     });
 });

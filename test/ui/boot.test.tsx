@@ -63,11 +63,13 @@ describe("BootPage", () => {
         render(<BootPage capabilities={capabilities} onRefresh={() => undefined} />);
 
         expect(await screen.findByText("Total boot timing")).toBeInTheDocument();
+        expect(screen.getByText("Total boot time")).toBeInTheDocument();
         expect(screen.getByText("Unit activation duration")).toBeInTheDocument();
         expect(screen.getByText("Critical boot path")).toBeInTheDocument();
         expect(screen.getByText("Activation time is not the same as boot delay")).toBeInTheDocument();
         expect(screen.getByText(/slowest unit here did not necessarily delay boot/)).toBeInTheDocument();
         expect(screen.getByText(/estimate, not a complete causal proof/)).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "About these views" })).toBeInTheDocument();
         expect(await screen.findByText("firewalld.service")).toBeInTheDocument();
         expect(screen.getAllByText("NetworkManager.service").length).toBeGreaterThan(0);
         expect(screen.getAllByText("Yes").length).toBeGreaterThan(0);
@@ -107,5 +109,13 @@ describe("BootPage", () => {
             />
         );
         expect(screen.getAllByText(/not available/).length).toBeGreaterThan(0);
+    });
+
+    it("keeps the longer view explanation in a popover", async () => {
+        const user = userEvent.setup();
+        render(<BootPage capabilities={capabilities} onRefresh={() => undefined} />);
+        expect(screen.queryByText(/Total boot timing is how long firmware/)).not.toBeInTheDocument();
+        await user.click(screen.getByRole("button", { name: "About these views" }));
+        expect(await screen.findByText(/Total boot timing is how long firmware/)).toBeInTheDocument();
     });
 });

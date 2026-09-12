@@ -34,7 +34,7 @@ export const AsyncState = ({
     if (status === "loading") {
         return (
             <div className="diagnostics-loading" role="status">
-                <Spinner size="lg" aria-label={loadingLabel ?? _("Loading")} />
+                <Spinner size="md" aria-label={loadingLabel ?? _("Loading")} />
                 <span className="pf-v6-u-ml-sm">{loadingLabel ?? _("Loading")}</span>
             </div>
         );
@@ -54,7 +54,11 @@ export const AsyncState = ({
 
     if (isEmpty) {
         return (
-            <EmptyState titleText={emptyTitle ?? _("No data")} headingLevel="h4">
+            <EmptyState
+                variant="sm"
+                titleText={emptyTitle ?? _("No data")}
+                headingLevel="h4"
+            >
                 {emptyBody && <EmptyStateBody>{emptyBody}</EmptyStateBody>}
             </EmptyState>
         );

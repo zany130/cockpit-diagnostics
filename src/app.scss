@@ -4,31 +4,47 @@
 .diagnostics-loading {
     display: flex;
     align-items: center;
-    min-height: 4rem;
+    min-height: 2.5rem;
 }
 
-.diagnostics-overview-grid {
-    display: grid;
-    grid-template-columns: 1fr;
+.diagnostics-page-header {
+    margin-block-end: var(--pf-t--global--spacer--md);
+}
+
+.diagnostics-stack {
+    display: flex;
+    flex-direction: column;
     gap: var(--pf-t--global--spacer--md);
 }
 
-@media (width >= 768px) {
-    .diagnostics-overview-grid {
-        grid-template-columns: 1fr 1fr;
-        align-items: start;
-    }
+.diagnostics-overview-lead {
+    margin-block-end: var(--pf-t--global--spacer--sm);
+    font-weight: var(--pf-t--global--font--weight--heading);
 }
 
-.diagnostics-chain {
-    margin: 0;
-    padding-left: 1.25rem;
-    font-family: var(--pf-t--global--font--family--mono, monospace);
-    line-height: 1.6;
+.diagnostics-boot-total {
+    margin-block-end: var(--pf-t--global--spacer--sm);
+}
+
+.diagnostics-boot-total-value {
+    font-size: var(--pf-t--global--font--size--xl);
+    font-weight: var(--pf-t--global--font--weight--heading);
+    line-height: 1.25;
+}
+
+.diagnostics-scroll {
+    overflow-x: auto;
+}
+
+.diagnostics-chain-node {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: var(--pf-t--global--spacer--xs);
+    align-items: center;
 }
 
 .diagnostics-chain-unit {
-    font-weight: 600;
+    font-weight: var(--pf-t--global--font--weight--heading);
 }
 
 .pf-v6-c-page__main-section {
