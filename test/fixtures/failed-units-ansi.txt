@@ -1,0 +1,2 @@
+[0;1;31m●[0m foo.service loaded failed failed Foo Service
+[32mbar.mount[0m loaded failed failed Bar Mount

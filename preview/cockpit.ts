@@ -97,10 +97,6 @@ const cockpit = {
                 return ok(unitShow);
             return fail("not-found", argv + ": not found");
         }
-        if (args[0] === "journalctl")
-            return ok(analyzeVersion);
-        if (args[0] === "coredumpctl")
-            return fail("not-found", "coredumpctl: not found");
         return fail("not-found", args[0] + ": not found");
     },
     dbus() {

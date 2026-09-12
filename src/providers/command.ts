@@ -42,12 +42,13 @@ export async function dbusCall(
     options?: { bus?: "system" | "session" | "user"; timeoutMs?: number }
 ): Promise<unknown[]> {
     const client = cockpit.dbus(name, { bus: options?.bus ?? "system" });
+    let timer: number | undefined;
     try {
         const timeout = options?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
         return await Promise.race([
             client.call(path, iface, method, args),
             new Promise<unknown[]>((_resolve, reject) => {
-                window.setTimeout(() => {
+                timer = window.setTimeout(() => {
                     reject(new ProviderError("timeout", "The D-Bus diagnostic call timed out.", { source: method }));
                 }, timeout);
             }),
@@ -55,6 +56,8 @@ export async function dbusCall(
     } catch (error) {
         throw normalizeSpawnError(error, method);
     } finally {
+        if (timer !== undefined)
+            window.clearTimeout(timer);
         client.close();
     }
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseFailedUnits, unitsFromDbusTuples } from "../../src/parsers/failedUnits";
+import { parseFailedUnits, unitsFromDbusCall, unitsFromDbusTuples } from "../../src/parsers/failedUnits";
 import { parseUnitShow } from "../../src/parsers/unitShow";
 import { ProviderError } from "../../src/types/providers";
 import { fixture } from "../readFixture";
@@ -36,8 +36,27 @@ describe("parseFailedUnits", () => {
         expect(parseFailedUnits("")).toEqual([]);
     });
 
+    it("ignores headers, legends, and count footers", () => {
+        const units = parseFailedUnits(fixture("failed-units-header.txt"));
+        expect(units.map(unit => unit.unit)).toEqual(["foo.service", "user@1000.service"]);
+        expect(units.find(unit => unit.unit === "2")).toBeUndefined();
+    });
+
+    it("treats legend-only empty output as no failed units", () => {
+        expect(parseFailedUnits(fixture("failed-units-empty-legend.txt"))).toEqual([]);
+    });
+
+    it("strips ANSI color and status bullets", () => {
+        const units = parseFailedUnits(fixture("failed-units-ansi.txt"));
+        expect(units.map(unit => unit.unit)).toEqual(["foo.service", "bar.mount"]);
+    });
+
     it("throws on malformed JSON", () => {
         expect(() => parseFailedUnits(fixture("failed-units-malformed.txt"))).toThrow(ProviderError);
+    });
+
+    it("throws when leftover plain text is not a unit listing", () => {
+        expect(() => parseFailedUnits("this is not a unit listing")).toThrow(ProviderError);
     });
 });
 
@@ -56,6 +75,20 @@ describe("unitsFromDbusTuples", () => {
                 subState: "failed",
             },
         ]);
+    });
+
+    it("accepts Cockpit D-Bus out-args wrapping", () => {
+        const units = unitsFromDbusCall([
+            [
+                ["foo.service", "Foo", "loaded", "failed", "failed", "", "/x", 0, "", ""],
+                ["ok.service", "Ok", "loaded", "active", "running", "", "/y", 0, "", ""],
+            ],
+        ]);
+        expect(units.map(unit => unit.unit)).toEqual(["foo.service"]);
+    });
+
+    it("returns an empty list for an empty tuple array", () => {
+        expect(unitsFromDbusCall([[]])).toEqual([]);
     });
 });
 

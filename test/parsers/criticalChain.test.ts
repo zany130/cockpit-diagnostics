@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { flattenCriticalChain, parseCriticalChain } from "../../src/parsers/criticalChain";
+import { parseCriticalChain } from "../../src/parsers/criticalChain";
+import { flattenCriticalChain } from "../../src/types/boot";
 import { ProviderError } from "../../src/types/providers";
 import { fixture } from "../readFixture";
 

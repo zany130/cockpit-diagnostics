@@ -1,6 +1,6 @@
 import type { FailedUnit } from "../types/diagnostics";
 import { ProviderError } from "../types/providers";
-import { parseFailedUnits, unitsFromDbusTuples } from "../parsers/failedUnits";
+import { parseFailedUnits, unitsFromDbusCall } from "../parsers/failedUnits";
 import { parseUnitShow } from "../parsers/unitShow";
 import { dbusCall, runCommand } from "./command";
 
@@ -31,7 +31,7 @@ async function listFailedUnitsDbus(): Promise<FailedUnit[]> {
             [["failed"]],
             { timeoutMs: UNITS_TIMEOUT_MS }
         );
-        return unitsFromDbusTuples(result[0]);
+        return unitsFromDbusCall(result);
     } catch {
         const result = await dbusCall(
             "org.freedesktop.systemd1",
@@ -41,26 +41,40 @@ async function listFailedUnitsDbus(): Promise<FailedUnit[]> {
             [],
             { timeoutMs: UNITS_TIMEOUT_MS }
         );
-        return unitsFromDbusTuples(result[0]);
+        return unitsFromDbusCall(result);
     }
 }
 
 async function listFailedUnitsSystemctl(): Promise<FailedUnit[]> {
-    const output = await runCommand(
-        [
-            "systemctl",
-            "--system",
-            "--no-pager",
-            "--no-ask-password",
-            "list-units",
-            "--state=failed",
-            "--plain",
-            "--no-legend",
-            "--full",
-        ],
-        { timeoutMs: UNITS_TIMEOUT_MS }
-    );
-    return parseFailedUnits(output);
+    const withPlain = [
+        "systemctl",
+        "--system",
+        "--no-pager",
+        "--no-ask-password",
+        "list-units",
+        "--state=failed",
+        "--plain",
+        "--no-legend",
+        "--full",
+    ];
+    const withoutPlain = [
+        "systemctl",
+        "--system",
+        "--no-pager",
+        "--no-ask-password",
+        "list-units",
+        "--state=failed",
+        "--no-legend",
+        "--full",
+    ];
+
+    try {
+        return parseFailedUnits(await runCommand(withPlain, { timeoutMs: UNITS_TIMEOUT_MS }));
+    } catch (error) {
+        if (!isInvalidOption(error))
+            throw error;
+        return parseFailedUnits(await runCommand(withoutPlain, { timeoutMs: UNITS_TIMEOUT_MS }));
+    }
 }
 
 async function enrichFailedUnits(units: FailedUnit[]): Promise<FailedUnit[]> {
@@ -90,4 +104,11 @@ async function enrichFailedUnits(units: FailedUnit[]): Promise<FailedUnit[]> {
     } catch {
         return units;
     }
+}
+
+function isInvalidOption(error: unknown): boolean {
+    if (!(error instanceof ProviderError))
+        return false;
+    const text = error.message.toLowerCase();
+    return /unrecognized option|invalid option|unknown option/.test(text);
 }

@@ -1,0 +1,2 @@
+[0;1;31m          4.123s NetworkManager.service[0m
+          1.234s firewalld.service

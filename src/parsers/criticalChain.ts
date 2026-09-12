@@ -33,16 +33,6 @@ export function parseCriticalChain(output: string): CriticalChainNode[] {
     return buildTree(parsed);
 }
 
-export function flattenCriticalChain(nodes: CriticalChainNode[]): string[] {
-    const units: string[] = [];
-    const walk = (node: CriticalChainNode) => {
-        units.push(node.unit);
-        node.children.forEach(walk);
-    };
-    nodes.forEach(walk);
-    return units;
-}
-
 function parseChainLine(line: string): ParsedLine | null {
     const prefix = line.match(TREE_PREFIX_RE)?.[0] ?? "";
     const rest = line.slice(prefix.length).trim();

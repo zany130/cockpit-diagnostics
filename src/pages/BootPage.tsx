@@ -11,9 +11,8 @@ import { SortByDirection, Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/re
 
 import cockpit from "cockpit";
 
-import type { BootSummary, CriticalChainNode, CriticalPathMark, UnitActivationTiming } from "../types/boot";
+import { flattenCriticalChain, type BootSummary, type CriticalChainNode, type CriticalPathMark, type UnitActivationTiming } from "../types/boot";
 import type { DiagnosticCapabilities } from "../types/diagnostics";
-import { flattenCriticalChain } from "../parsers/criticalChain";
 import { loadBlame, loadBootSummary, loadCriticalChain } from "../providers/systemdAnalyze";
 import { formatDuration, formatDurationExact } from "../utils/duration";
 import { AsyncState } from "../components/AsyncState";

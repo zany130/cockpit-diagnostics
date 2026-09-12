@@ -56,7 +56,8 @@ Parser tests use captured `systemd-analyze` and `systemctl` output. Browser inte
 ## Command and parsing rules
 
 - Commands run through `cockpit.spawn()` with argv arrays, never shell strings.
-- Text-producing commands set `LC_ALL=C`.
+- Text-producing commands set `LC_ALL=C`, disable colors, and disable the pager.
+- Capability detection probes only `systemd-analyze` and `systemctl`.
 - `systemd-analyze time`, `blame`, and `critical-chain` have no documented JSON output, so they are parsed from locale-stable text.
 - Failed units prefer systemd D-Bus `ListUnitsFiltered`, then `systemctl list-units --state=failed --plain`.
 - Providers fail independently. A missing `systemd-analyze` does not hide failed units.

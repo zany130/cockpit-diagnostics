@@ -28,6 +28,12 @@ describe("parseBlame", () => {
         ]);
     });
 
+    it("strips ANSI color codes", () => {
+        const rows = parseBlame(fixture("blame-ansi.txt"));
+        expect(rows[0]).toEqual({ unit: "NetworkManager.service", durationUs: 4_123_000 });
+        expect(rows[1].unit).toBe("firewalld.service");
+    });
+
     it("returns an empty list for empty output", () => {
         expect(parseBlame("")).toEqual([]);
         expect(parseBlame("\n\n")).toEqual([]);

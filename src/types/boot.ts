@@ -22,3 +22,13 @@ export interface CriticalChainNode {
 }
 
 export type CriticalPathMark = "yes" | "no" | "unknown";
+
+export function flattenCriticalChain(nodes: CriticalChainNode[]): string[] {
+    const units: string[] = [];
+    const walk = (node: CriticalChainNode) => {
+        units.push(node.unit);
+        node.children.forEach(walk);
+    };
+    nodes.forEach(walk);
+    return units;
+}

@@ -45,6 +45,13 @@ describe("parseBootTime", () => {
         expect(summary.initrdUs).toBeUndefined();
     });
 
+    it("strips ANSI color codes from the startup line", () => {
+        const summary = parseBootTime(fixture("boot-time-ansi.txt"));
+        expect(summary.kernelUs).toBe(2_584_000);
+        expect(summary.totalUs).toBe(69_608_000);
+        expect(summary.target).toBe("multi-user.target");
+    });
+
     it("throws on empty output", () => {
         expect(() => parseBootTime("")).toThrow(ProviderError);
         expect(() => parseBootTime("")).toThrow(/Startup finished/);

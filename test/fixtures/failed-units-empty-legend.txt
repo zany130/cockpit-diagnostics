@@ -1,0 +1,8 @@
+  UNIT LOAD ACTIVE SUB DESCRIPTION
+
+LOAD   = Reflects whether the unit definition was properly loaded.
+ACTIVE = The high-level unit activation state, i.e. generalization of SUB.
+SUB    = The low-level unit activation state, values depend on unit type.
+
+0 loaded units listed.
+To show all installed unit files use 'systemctl list-unit-files'.

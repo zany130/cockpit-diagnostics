@@ -1,0 +1,12 @@
+  UNIT          LOAD   ACTIVE SUB    DESCRIPTION
+  foo.service   loaded failed failed Foo Service
+  user@1000.service loaded failed failed User Manager for UID 1000
+
+LOAD   = Reflects whether the unit definition was properly loaded.
+ACTIVE = The high-level unit activation state, i.e. generalization of SUB.
+SUB    = The low-level unit activation state, values depend on unit type.
+
+Legend: LOAD   → Reflects whether the unit definition was properly loaded.
+
+2 loaded units listed.
+To show all installed unit files use 'systemctl list-unit-files'.

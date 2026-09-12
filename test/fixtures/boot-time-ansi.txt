@@ -1,0 +1,2 @@
+[0;1;31mStartup finished in 2.584s (kernel) + 19.176s (initrd) + 47.847s (userspace) = 1min 9.608s[0m
+[0;1;32mmulti-user.target[0m reached after 32.786s in userspace.

@@ -46,12 +46,16 @@ function kindFromSpawnFailure(failure: SpawnFailure, message: string): ProviderE
     if (lower.includes("not been booted with systemd") ||
             lower.includes("unknown command") ||
             lower.includes("invalid option") ||
+            lower.includes("unrecognized option") ||
             lower.includes("too few arguments"))
         return "not-supported";
     if (lower.includes("permission denied") ||
             lower.includes("access denied") ||
             lower.includes("interactive authentication required") ||
-            lower.includes("auth"))
+            lower.includes("authentication is required") ||
+            /\bnot authorized\b/.test(lower) ||
+            /\bauthorization failed\b/.test(lower) ||
+            /\bauthentication failed\b/.test(lower))
         return "permission-denied";
     if (lower.includes("no such file") || lower.includes("not found"))
         return "not-found";

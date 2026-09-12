@@ -10,8 +10,6 @@ describe("capability parsing", () => {
         expect(features.time).toBe(true);
         expect(features.blame).toBe(true);
         expect(features.criticalChain).toBe(true);
-        expect(features.plot).toBe(true);
-        expect(features.security).toBe(true);
     });
 
     it("parses the systemd version", () => {
@@ -22,7 +20,6 @@ describe("capability parsing", () => {
         const features = parseAnalyzeHelp("systemd-analyze\n  time\n");
         expect(features.blame).toBe(false);
         expect(features.criticalChain).toBe(false);
-        expect(features.security).toBe(false);
     });
 });
 
@@ -34,6 +31,24 @@ describe("normalizeSpawnError", () => {
 
     it("maps permission failures", () => {
         const error = normalizeSpawnError({ problem: "access-denied", message: "access denied" });
+        expect(error.kind).toBe("permission-denied");
+    });
+
+    it("does not treat the substring 'auth' as a permission failure", () => {
+        const error = normalizeSpawnError({
+            problem: null,
+            exit_status: 1,
+            message: "Failed to parse authoritative unit list",
+        });
+        expect(error.kind).toBe("command-failed");
+    });
+
+    it("maps interactive authentication messages", () => {
+        const error = normalizeSpawnError({
+            problem: null,
+            exit_status: 1,
+            message: "Interactive authentication required",
+        });
         expect(error.kind).toBe("permission-denied");
     });
 

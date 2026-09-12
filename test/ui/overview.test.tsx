@@ -30,10 +30,6 @@ const capabilities: DiagnosticCapabilities = {
     systemdAnalyzeTime: true,
     systemdAnalyzeBlame: true,
     systemdAnalyzeCriticalChain: true,
-    systemdAnalyzePlot: false,
-    systemdAnalyzeSecurity: false,
-    journalctl: true,
-    coredumpctl: false,
     systemctl: true,
     systemdVersion: 255,
 };

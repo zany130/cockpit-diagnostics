@@ -29,15 +29,15 @@ export interface FailedUnit {
     inactiveEnterTimestamp?: string;
 }
 
+/**
+ * v0.1 capability matrix. Do not add journalctl, coredumpctl, plot, or
+ * security probes here until those milestones actually consume them.
+ */
 export interface DiagnosticCapabilities {
     systemdAnalyze: boolean;
     systemdAnalyzeTime: boolean;
     systemdAnalyzeBlame: boolean;
     systemdAnalyzeCriticalChain: boolean;
-    systemdAnalyzePlot: boolean;
-    systemdAnalyzeSecurity: boolean;
-    journalctl: boolean;
-    coredumpctl: boolean;
     systemctl: boolean;
     systemdVersion?: number;
 }
