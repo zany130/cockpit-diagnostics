@@ -4,6 +4,15 @@ import cockpit from "cockpit";
 
 import { jumpToService, jumpToServices, jumpToUnitLogs, serviceUnitPath, unitLogsPath } from "../../src/utils/cockpitLinks";
 
+function assertLogsJump(route: string, encodedUnit: string) {
+    expect(route).toBe(`/system/logs#?service=${encodedUnit}&start=boot&prio=*`);
+    expect(route.startsWith("/system/logs")).toBe(true);
+    expect(route).toContain(`service=${encodedUnit}`);
+    expect(route).toContain("start=boot");
+    expect(route).toContain("prio=*");
+    expect(route).not.toContain(".html");
+}
+
 describe("cockpitLinks", () => {
     afterEach(() => {
         vi.restoreAllMocks();
@@ -14,33 +23,28 @@ describe("cockpitLinks", () => {
         expect(serviceUnitPath("foo.service")).toBe("/system/services#/foo.service");
     });
 
-    it("jumps to the Logs shell component with documented service and boot filters", () => {
+    it("jumps to Logs with service, current-boot, and all-priority filters", () => {
         const jump = vi.spyOn(cockpit, "jump").mockImplementation(() => undefined);
 
-        jumpToUnitLogs("foo.service");
+        jumpToUnitLogs("NetworkManager.service");
         expect(jump).toHaveBeenCalledTimes(1);
-        expect(jump).toHaveBeenCalledWith("/system/logs#?service=foo.service&start=boot");
-
-        const logsRoute = String(jump.mock.calls[0][0]);
-        expect(logsRoute.startsWith("/system/logs#")).toBe(true);
-        expect(logsRoute).not.toContain(".html");
-        expect(logsRoute).toContain("service=foo.service");
-        expect(logsRoute).toContain("start=boot");
+        assertLogsJump(String(jump.mock.calls[0][0]), "NetworkManager.service");
+        expect(jump).toHaveBeenCalledWith("/system/logs#?service=NetworkManager.service&start=boot&prio=*");
     });
 
-    it("encodes template-instance @ characters in the Logs service filter", () => {
+    it("encodes @ in the Logs service filter while leaving prio=* intact", () => {
         const jump = vi.spyOn(cockpit, "jump").mockImplementation(() => undefined);
 
         jumpToUnitLogs("user@1000.service");
-        expect(jump).toHaveBeenCalledWith("/system/logs#?service=user%401000.service&start=boot");
-
-        const logsRoute = String(jump.mock.calls[0][0]);
-        expect(logsRoute).not.toContain(".html");
-        expect(logsRoute).toContain("service=user%401000.service");
+        expect(jump).toHaveBeenCalledTimes(1);
+        assertLogsJump(String(jump.mock.calls[0][0]), "user%401000.service");
+        expect(jump).toHaveBeenCalledWith("/system/logs#?service=user%401000.service&start=boot&prio=*");
+        expect(String(jump.mock.calls[0][0])).toContain("prio=*");
+        expect(String(jump.mock.calls[0][0])).not.toContain("prio=%2A");
     });
 
     it("keeps unitLogsPath aligned with the shell jump route", () => {
-        expect(unitLogsPath("foo.service")).toBe("/system/logs#?service=foo.service&start=boot");
+        expect(unitLogsPath("foo.service")).toBe("/system/logs#?service=foo.service&start=boot&prio=*");
         expect(unitLogsPath("foo.service")).not.toContain(".html");
     });
 
@@ -51,9 +55,10 @@ describe("cockpitLinks", () => {
         jumpToServices();
         expect(jump.mock.calls.map(call => call[0])).toEqual([
             "/system/services#/user@1000.service",
-            "/system/logs#?service=foo.service&start=boot",
+            "/system/logs#?service=foo.service&start=boot&prio=*",
             "/system/services",
         ]);
         expect(String(jump.mock.calls[1][0])).not.toContain(".html");
+        expect(String(jump.mock.calls[1][0])).toContain("prio=*");
     });
 });

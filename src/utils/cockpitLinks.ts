@@ -9,7 +9,10 @@ import cockpit from "cockpit";
  * to the HTML file. Passing `logs.html` is not a registered component and
  * falls back to Overview.
  *
- * Documented Logs location filters: `#?service=` and `#?start=boot`.
+ * Documented Logs location filters: `#?service=`, `#?start=boot`, and
+ * `#?prio=*`. Omitting prio uses Cockpit's default error-level filter, so
+ * View Logs always sets `prio=*` to show every journal priority for the
+ * selected unit on the current boot.
  *
  * An exact-unit Services URL is not listed in that API document. Cockpit's
  * current Services UI (and its own tests) use `/system/services#/<unit>`.
@@ -24,7 +27,7 @@ export function serviceUnitPath(unit: string): string {
 }
 
 export function unitLogsPath(unit: string): string {
-    return "/system/logs#?service=" + encodeURIComponent(unit) + "&start=boot";
+    return "/system/logs#?service=" + encodeURIComponent(unit) + "&start=boot&prio=*";
 }
 
 export function jumpToService(unit: string): void {
