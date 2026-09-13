@@ -1,15 +1,14 @@
 pkgname=cockpit-diagnostics
 pkgver=VERSION
 pkgrel=1
-pkgdesc='Cockpit systemd boot and unit diagnostics'
-arch=('x86_64')
-url='https://github.com/cockpit-project/starter-kit'
-license=(LGPL)
+pkgdesc='systemd and Linux diagnostics for Cockpit'
+arch=('any')
+license=(LGPL-2.1-or-later)
 source=("SOURCE")
 sha256sums=('SKIP')
 
 package() {
-  depends=(cockpit)
+  depends=(cockpit systemd)
   cd $pkgname
   make DESTDIR="$pkgdir" install PREFIX=/usr
 }

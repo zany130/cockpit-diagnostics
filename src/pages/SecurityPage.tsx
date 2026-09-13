@@ -221,7 +221,6 @@ const SecurityDrawer = ({
                         <ToolbarItem>
                             <FormSelect
                                 id="security-assessment-filter"
-                                aria-label={_("Assessment")}
                                 aria-labelledby="security-assessment-filter-label"
                                 value={assessmentFilter}
                                 onChange={(_event, value) => onFilter(value)}
@@ -459,7 +458,7 @@ const CheckState = ({ state }: { state: SecurityCheckState }) => {
     if (state === "applied") {
         return (
             <span className="diagnostics-security-state">
-                <CheckIcon />
+                <CheckIcon aria-hidden />
                 <span>{_("Applied")}</span>
             </span>
         );
@@ -467,14 +466,14 @@ const CheckState = ({ state }: { state: SecurityCheckState }) => {
     if (state === "not-applied") {
         return (
             <span className="diagnostics-security-state">
-                <TimesIcon />
+                <TimesIcon aria-hidden />
                 <span>{_("Not applied")}</span>
             </span>
         );
     }
     return (
         <span className="diagnostics-security-state">
-            <MinusIcon />
+            <MinusIcon aria-hidden />
             <span>{_("Not applicable")}</span>
         </span>
     );

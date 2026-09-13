@@ -1,7 +1,8 @@
 # extract name from package.json
-PACKAGE_NAME := $(shell awk '/"name":/ {gsub(/[",]/, "", $$2); print $$2}' package.json)
+PACKAGE_NAME := $(shell awk '/"name":/ {gsub(/[",]/, "", $$2); print $$2; exit}' package.json)
 RPM_NAME := cockpit-$(PACKAGE_NAME)
-VERSION := $(shell T=$$(git describe 2>/dev/null) || T=1; echo $$T | tr '-' '.')
+# package.json is the version source of truth until a git tag is created.
+VERSION := $(shell awk '/"version":/ {gsub(/[",]/, "", $$2); print $$2; exit}' package.json)
 ifeq ($(TEST_OS),)
 TEST_OS = centos-9-stream
 endif
@@ -97,13 +98,18 @@ clean:
 	rm -f po/LINGUAS
 	rm -f metafile.json runtime-npm-modules.txt
 
-install: $(DIST_TEST) po/LINGUAS
+install: $(DIST_TEST)
 	mkdir -p $(DESTDIR)$(PREFIX)/share/cockpit/$(PACKAGE_NAME)
-	cp -r dist/* $(DESTDIR)$(PREFIX)/share/cockpit/$(PACKAGE_NAME)
+	cp -a dist/. $(DESTDIR)$(PREFIX)/share/cockpit/$(PACKAGE_NAME)
 	mkdir -p $(DESTDIR)$(PREFIX)/share/metainfo/
-	msgfmt --xml -d po \
-		--template $(APPSTREAMFILE) \
-		-o $(DESTDIR)$(PREFIX)/share/metainfo/$(APPSTREAMFILE)
+	if [ -n "$(LINGUAS)" ]; then \
+		echo $(LINGUAS) | tr ' ' '\n' | sed '/^$$/d' > po/LINGUAS; \
+		msgfmt --xml -d po \
+			--template $(APPSTREAMFILE) \
+			-o $(DESTDIR)$(PREFIX)/share/metainfo/$(APPSTREAMFILE); \
+	else \
+		cp $(APPSTREAMFILE) $(DESTDIR)$(PREFIX)/share/metainfo/$(APPSTREAMFILE); \
+	fi
 
 # this requires a built source tree and avoids having to install anything system-wide
 devel-install: $(DIST_TEST)
@@ -139,14 +145,16 @@ $(NODE_CACHE): $(NODE_MODULES_TEST)
 node-cache: $(NODE_CACHE)
 
 # convenience target for developers
-srpm: $(TARFILE) $(NODE_CACHE) $(SPEC)
+srpm: $(TARFILE) $(SPEC)
 	rpmbuild -bs \
 	  --define "_sourcedir `pwd`" \
 	  --define "_srcrpmdir `pwd`" \
 	  $(SPEC)
 
 # convenience target for developers
-rpm: $(TARFILE) $(NODE_CACHE) $(SPEC)
+# Uses the prebuilt dist/ inside the source tarball. Does not require
+# a separate node_modules cache tarball.
+rpm: $(TARFILE) $(SPEC)
 	mkdir -p "`pwd`/output"
 	mkdir -p "`pwd`/rpmbuild"
 	rpmbuild -bb \

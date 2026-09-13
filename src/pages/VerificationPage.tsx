@@ -338,7 +338,7 @@ const FindingIcon = ({ severity }: { severity: VerificationFinding["severity"] }
     if (severity === "error") {
         return (
             <span className="diagnostics-verify-state">
-                <ExclamationCircleIcon />
+                <ExclamationCircleIcon aria-hidden />
                 <span>{_("Error")}</span>
             </span>
         );
@@ -346,14 +346,14 @@ const FindingIcon = ({ severity }: { severity: VerificationFinding["severity"] }
     if (severity === "warning") {
         return (
             <span className="diagnostics-verify-state">
-                <ExclamationTriangleIcon />
+                <ExclamationTriangleIcon aria-hidden />
                 <span>{_("Warning")}</span>
             </span>
         );
     }
     return (
         <span className="diagnostics-verify-state">
-            <CheckIcon />
+            <CheckIcon aria-hidden />
             <span>{_("Info")}</span>
         </span>
     );

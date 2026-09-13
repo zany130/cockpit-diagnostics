@@ -1,78 +1,67 @@
 Name: cockpit-diagnostics
 Version: %{VERSION}
 Release: 1%{?dist}
-Summary: Cockpit systemd boot and unit diagnostics
+Summary: systemd and Linux diagnostics for Cockpit
 License: LGPL-2.1-or-later
 
-# distributions which ship nodejs-esbuild can rebuild the bundle during package build
-%if 0%{?fedora} >= 42
-%define rebuild_bundle 1
-%endif
+# Production JavaScript is prebuilt by `make dist` into dist/. The RPM
+# installs those artifacts; it does not bundle node_modules or rebuild
+# the frontend during rpmbuild.
 
-Source0: https://github.com/cockpit-project/starter-kit/releases/download/%{version}/%{name}-%{version}.tar.xz
-Source1: https://github.com/cockpit-project/starter-kit/releases/download/%{version}/%{name}-node-%{version}.tar.xz
+Source0: %{name}-%{version}.tar.xz
 
 BuildArch: noarch
-%if ! 0%{?suse_version}
-ExclusiveArch: %{nodejs_arches} noarch
-%endif
 BuildRequires: make
+BuildRequires: gettext
 %if 0%{?suse_version}
-# Suse's package has a different name
 BuildRequires: appstream-glib
 %else
 BuildRequires: libappstream-glib
 %endif
-BuildRequires: gettext
-%if 0%{?rhel} && 0%{?rhel} <= 8
-BuildRequires: libappstream-glib-devel
-%endif
-%if %{defined rebuild_bundle}
-BuildRequires: /usr/bin/node
-BuildRequires: nodejs-esbuild
-%endif
 
+# Hard runtime: this is a Cockpit package that talks to systemd.
 Requires: cockpit-bridge
+Requires: systemd
+# coredumpctl is typically in systemd; systemd-coredump stores crash files.
+# The Crashes page degrades to an empty/unavailable state without it.
+Recommends: systemd-coredump
 
 %{NPM_PROVIDES}
 
 %description
-Cockpit application for systemd boot timing, unit activation duration,
-the critical chain, and currently failed units.
+Cockpit application for current-boot systemd timing, systemd-analyze
+plot, unit activation duration, the critical chain, currently failed
+units, current-boot coredumps, conservative OOM and high-priority
+kernel findings, systemd-analyze security (service sandboxing
+exposure), and systemd-analyze verify (read-only unit-file checks).
+
+It links to Cockpit Services and Logs instead of replacing them.
+Security analysis is not a vulnerability scanner. Verification does
+not edit units, reload systemd, or start services.
 
 %prep
 %autosetup -n %{name}
-%if %{defined rebuild_bundle}
-%setup -q -D -T -a 1 -n %{name}
-%endif
 
 %build
-%if %{defined rebuild_bundle}
-rm -rf dist
-# HACK: node module packaging is broken in Fedora ≤ 43; should be in
-# common location, not major version specific one
-NODE_ENV=production NODE_PATH=/usr/lib/node_modules:$(echo /usr/lib/node_modules_*) ./build.js
-%else
-# Use pre-built bundle on distributions without nodejs-esbuild
-%endif
-
+# Bundle is already in dist/ from the source tarball.
 
 %install
 %make_install PREFIX=/usr
 
 # drop source maps, they are large and just for debugging
-find %{buildroot}%{_datadir}/cockpit/ -name '*.map' | xargs --no-run-if-empty rm --verbose
+find %{buildroot}%{_datadir}/cockpit/diagnostics/ -name '*.map' | xargs --no-run-if-empty rm --verbose
 
 %check
-appstream-util validate-relax --nonet %{buildroot}/%{_datadir}/metainfo/*
-
-# this can't be meaningfully tested during package build; tests happen through
-# FMF (see plans/all.fmf) during package gating
+if command -v appstream-util >/dev/null 2>&1; then
+  appstream-util validate-relax --nonet %{buildroot}/%{_datadir}/metainfo/*
+fi
 
 %files
-%doc README.md
+%doc README.md CHANGELOG.md
 %license LICENSE dist/index.js.LEGAL.txt
-%{_datadir}/cockpit/*
-%{_datadir}/metainfo/*
+%{_datadir}/cockpit/diagnostics/
+%{_datadir}/metainfo/org.cockpit_project.diagnostics.metainfo.xml
 
 %changelog
+* Sun Sep 13 2026 cockpit-diagnostics contributors - 1.0.0-1
+- First stable release of cockpit-diagnostics

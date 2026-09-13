@@ -1,55 +1,143 @@
 # cockpit-diagnostics
 
-A Cockpit application that presents systemd boot, unit, crash, current-boot findings, systemd service sandboxing analysis, and unit-file verification without replacing Cockpit Services or Logs.
+`cockpit-diagnostics` is a Cockpit application that adds deep systemd and Linux diagnostics while reusing Cockpit Services and Logs for management and raw evidence.
 
-v0.5 answers:
+It answers questions such as how long the current boot took, which units failed, whether processes dumped core, whether the kernel reported out-of-memory kills, how strongly loaded system services use systemd sandboxing, and what `systemd-analyze verify` reports for an installed unit file.
 
-- How long did this boot take, by phase?
-- What did this boot look like as systemd's own timeline (`systemd-analyze plot`)?
-- Which units spent the longest in the activating state?
-- Which units appear on systemd's critical boot path?
-- Which units are currently failed?
-- Which coredumps were recorded for the current boot?
-- Was there out-of-memory kill activity on this boot?
-- Were there high-priority kernel events on this boot?
-- How strongly do loaded system services use systemd sandboxing settings, according to `systemd-analyze security`?
-- What warnings or errors does `systemd-analyze verify` report for an installed unit file?
+It does not invent a health score, scan for vulnerabilities, browse the journal, edit units, or restart services.
 
-It does **not** invent a health score, restart services, store history, browse the journal, debug cores, scan for CVEs, edit units, or change unit hardening. Cockpit Logs remains the place to inspect raw journal evidence. Cockpit Services remains the place to start, stop, or edit units.
+## Features
 
-The Security page reports systemd's own exposure/assessment for service configuration. A high exposure value does not prove a service is vulnerable. A low exposure value does not prove a service is safe.
-
-The Verification page reports systemd's own unit-file findings. An empty result does not prove the unit will start. Findings can mention related units, not only the unit you selected.
+- **Overview** — concise snapshot of failed units, crashes, and implemented findings
+- **Boot** — total boot timing, firmware/loader/kernel/initrd/userspace breakdown where systemd reports it, `systemd-analyze blame`, `systemd-analyze critical-chain`, and a graphical boot timeline from `systemd-analyze plot`
+- **Crashes** — current-boot coredumps from `coredumpctl`, with details and a jump into Cockpit Logs
+- **Findings** — conservative current-boot OOM kill detection and high-priority kernel events; not a journal browser
+- **Security** — `systemd-analyze security` service exposure/hardening analysis (not a vulnerability scanner)
+- **Verification** — read-only `systemd-analyze verify` of installed unit files (no unit editing or daemon-reload)
+- **Cockpit integration** — View Service and View Logs use Cockpit shell routes
 
 ## Requirements
 
-- A systemd-based Linux host with Cockpit
-- Node.js 18+ and `make` to build from source
-- `gettext` for translations
-- `coredumpctl` for the Crashes page (optional)
-- `journalctl` for the Findings page (optional)
-- `systemd-analyze security` with `--json=short` for the Security page (optional)
-- `systemd-analyze plot` for the Boot timeline (optional; other Boot views still work)
-- `systemd-analyze verify` for the Verification page (optional)
+- A systemd-based Linux host with [Cockpit](https://cockpit-project.org/)
+- systemd as PID 1 for live boot timing and plot (containers without a system manager degrade those views)
+- Node.js 18+ and `make` only when building from source
 
-## Build and install
+Hard runtime dependencies of the RPM:
+
+- `cockpit-bridge`
+- `systemd`
+
+Optional capabilities are detected at runtime. Missing tools disable only the matching page or card:
+
+- `coredumpctl` / `systemd-coredump` — Crashes
+- `journalctl` with sufficient access — Findings
+- `systemd-analyze security` — Security
+- `systemd-analyze plot` — Boot timeline (other Boot views still work)
+- `systemd-analyze verify` — Verification
+
+Minimum tested baseline: systemd 255-family interfaces on a Fedora/Bazzite host, Cockpit package API 137+. Other modern systemd distributions should work through feature probing rather than distro-name branching.
+
+## Installation
+
+### RPM (production)
+
+Build the package (see [Packaging](#packaging)), then install the noarch RPM:
 
 ```bash
+sudo dnf install ./cockpit-diagnostics-1.0.0-1*.noarch.rpm
+```
+
+Cockpit loads the plugin from `/usr/share/cockpit/diagnostics/`. Reload the Cockpit session if Diagnostics does not appear immediately.
+
+### Manual production install
+
+From a built source tree, install the same production files the RPM would:
+
+```bash
+make
+sudo make install PREFIX=/usr
+```
+
+That copies `dist/` to `/usr/share/cockpit/diagnostics/` and the AppStream metadata to `/usr/share/metainfo/`. This is not a development symlink.
+
+### Uninstall
+
+RPM:
+
+```bash
+sudo dnf remove cockpit-diagnostics
+```
+
+Manual:
+
+```bash
+sudo rm -rf /usr/share/cockpit/diagnostics
+sudo rm -f /usr/share/metainfo/org.cockpit_project.diagnostics.metainfo.xml
+```
+
+Development files in a git checkout are not touched by either uninstall path.
+
+## Usage
+
+Open **Diagnostics** in the Cockpit sidebar.
+
+- **Overview** — counts and teasers. It does not run plot, security analysis, or unit verification.
+- **Boot** — timing first, then the timeline, blame table, and critical chain. Blame measures activation duration, not boot delay; units start in parallel.
+- **Crashes** — coredumps for the current boot only.
+- **Findings** — OOM kills and high-priority kernel messages for the current boot. Use **View Logs** for the raw journal.
+- **Security** — systemd's own exposure values for loaded long-running system `.service` units. A high number means fewer sandboxing settings are applied; it does not prove a CVE.
+- **Verification** — select an installed unit file and run systemd's verifier. Related-unit warnings are labeled as related. An empty result is not a promise that the unit will start.
+
+Use **Refresh** on a page to rerun that page's providers. The plugin does not poll.
+
+## What it is not
+
+- Not a replacement for Cockpit Logs
+- Not a replacement for Cockpit Services
+- Not a vulnerability, malware, or exploitability scanner
+- Not a monitoring daemon or metrics collector
+- Not automatic remediation, hardening, or unit editing
+- Not a system-wide health score
+
+## Security and privacy
+
+- No telemetry
+- No remote diagnostic upload
+- No persistent diagnostic database
+- No automatic remediation
+- No service start/stop/restart/enable/disable
+- No unit-file editing and no `daemon-reload`
+- Read-mostly: diagnostic commands run locally through Cockpit/`cockpit.spawn()` and systemd D-Bus
+- Commands use argv arrays, never `sh -c`
+- The plugin does not request Cockpit superuser for diagnostic commands; it shows whatever the logged-in session can already read
+- Journal, coredump, and unit text is rendered as text, not HTML
+- `systemd-analyze plot` SVG is sanitized and shown as an `<img>` blob, not injected as live markup
+
+## Known limitations
+
+- Live `systemd-analyze time` / `plot` / `blame` / `critical-chain` need systemd as PID 1
+- Firmware or loader timing is omitted when systemd does not report those phases
+- Ordinary users typically see only journal and coredump data they can read
+- `coredumpctl list` with no matches is shown as an empty Crashes page
+- `systemd-analyze security` inspects loaded long-running system services and can take several seconds; the page snapshots once
+- `systemd-analyze verify` may mention related units; exit status 0 can still include warnings
+- User-manager (`--user`) analysis is out of scope
+- The shipped UI is English. Gettext infrastructure remains for future catalogs; there is no partial demo translation
+
+## Development
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture boundaries and test expectations.
+
+```bash
+git clone <repository>
+cd cockpit-diagnostics
 make
 make devel-install
 ```
 
-`make` fetches Cockpit's shared `pkg/lib` sources, installs npm dependencies, and writes `dist/`. `make devel-install` links that directory into `~/.local/share/cockpit/diagnostics`. Reload Cockpit and open **Diagnostics**.
+`make devel-install` is **development-only**. It symlinks `dist/` into `~/.local/share/cockpit/diagnostics`. Do not use it as a production install.
 
-Production install:
-
-```bash
-make install
-```
-
-## Local UI preview without Cockpit
-
-This repository can serve a fixture-backed preview of the Overview, Boot, Crashes, Findings, Security, and Verification pages. It is not a substitute for running the plugin inside Cockpit, and it does not talk to a live systemd instance.
+Local fixture-backed UI preview (not a live systemd host):
 
 ```bash
 make
@@ -58,44 +146,36 @@ npm run preview
 
 Then open `http://127.0.0.1:43127/`.
 
-## Tests
+Tests:
 
 ```bash
 npm run typecheck
-npm test
 npm run eslint
 npm run stylelint
+npm test
 ```
 
-Parser and detector tests use captured `systemd-analyze`, `systemctl`, `coredumpctl`, sanitized `journalctl --output=json`, `systemd-analyze --json=short security`, `systemd-analyze plot` SVG, and `systemd-analyze verify` fixtures. Browser integration tests (`make check`) need Cockpit's test VM images.
+Browser integration tests (`make check`) need Cockpit bots/VM images. See [docs/manual-test-matrix.md](docs/manual-test-matrix.md).
 
-## Command and parsing rules
+## Packaging
 
-- Commands run through `cockpit.spawn()` with argv arrays, never shell strings.
-- Text-producing commands set `LC_ALL=C`, disable colors, and disable the pager.
-- Capability detection probes `systemd-analyze --help` / `--version`, `systemctl`, `coredumpctl`, and `journalctl`. Plot, verify, and security are enabled only when that help text lists the matching subcommand. The plugin does not spawn `plot`, `verify`, or `security` during capability detection.
-- `systemd-analyze time`, `blame`, and `critical-chain` have no documented JSON output, so they are parsed from locale-stable text.
-- Failed units prefer systemd D-Bus `ListUnitsFiltered`, then `systemctl list-units --state=failed --plain`.
-- Coredumps prefer `coredumpctl --json=short list` plus a `_BOOT_ID=` match for the current boot. `coredumpctl` has no `--boot` option.
-- Findings use bounded `journalctl --output=json` queries for the current boot only. Detectors interpret normalized entries; the UI does not browse the journal.
-- Security uses `systemd-analyze --system --no-pager --json=short security` once per Security page load or refresh, then the same command with one unit name for per-setting details. Overview does not run this analysis. Unit names are separate argv entries.
-- Boot plot uses `systemd-analyze --system --no-pager plot` (SVG stdout). `--json` / `--table` emit raw timings, not the chart, and are not used. The SVG is sanitized, then shown as `image/svg+xml` through a blob URL in an `<img>`. Overview does not generate a plot.
-- Verification lists installed system unit files through D-Bus `ListUnitFiles` (then `systemctl list-unit-files`) and runs `systemd-analyze --system --no-pager --man=no verify UNIT` with the unit name as its own argv entry. Findings come from stderr/stdout text; there is no JSON mode. Default systemd 255 exit status is 0 even when warnings exist.
-- Providers fail independently. A missing plot, verify, journalctl, or security subcommand does not hide the other pages.
+```bash
+make rpm
+```
 
-## Known limitations
+That produces a noarch RPM such as `cockpit-diagnostics-1.0.0-1.fc42.noarch.rpm` (the distro suffix depends on the build host). The package contains production Cockpit files under `/usr/share/cockpit/diagnostics/` plus AppStream metadata. It does not ship `node_modules`, tests, preview tooling, or the development symlink workflow.
 
-- `systemd-analyze blame` measures activation duration, not boot delay. Units start in parallel.
-- `systemd-analyze critical-chain` is an estimate. Socket activation, skipped activating states, and timed-out jobs are not fully represented.
-- This host must be booted with systemd as PID 1 for live `time` / `plot` / `blame` / `critical-chain` data. `verify` can still check unit files without a live system bus in some environments.
-- Ordinary users typically see only journal data they can read. Diagnostics does not auto-escalate. Verification of some protected generator paths may require privileges; v0.5 does not enable `--generators` and does not request superuser for every verify.
-- `coredumpctl list` with no matches exits non-zero (`No coredumps found.`); the UI treats that as an empty list.
-- `journalctl --grep` exits 1 when nothing matches; Findings treats that as an empty result for that query.
-- `systemd-analyze security` without unit names inspects every loaded long-running system `.service`. That can take several seconds on a busy host, so the page snapshots once and does not poll.
-- `--offline` is not used. That mode reviews unit files through a private manager, not the live system instance.
-- User-manager (`--user`) analysis is out of scope for v0.5.
-- `systemd-analyze plot` SVG can be large. The plugin caps it at 8 MiB, times out after 60 s, keeps only the current session's plot in memory, and regenerates only on Boot page load or Refresh.
-- `systemd-analyze verify` may report problems in related units. The UI labels those as related rather than as errors in the selected unit.
-- v0.5 does not include a journal browser, CVE scanning, automatic hardening, boot history, GDB, core download, core deletion, unit editing, daemon-reload, or service start/stop controls.
+Inspect:
 
-See `IMPLEMENTATION.md` for the architectural contract.
+```bash
+rpm -qip cockpit-diagnostics-1.0.0-*.noarch.rpm
+rpm -qlp cockpit-diagnostics-1.0.0-*.noarch.rpm
+```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+GNU Lesser General Public License, version 2.1 or later. See [LICENSE](LICENSE). Files adapted from the Cockpit Starter Kit retain their upstream notices.

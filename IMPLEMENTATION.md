@@ -1,6 +1,6 @@
 # IMPLEMENTATION.md — cockpit-diagnostics
 
-> Status: implementation specification  
+> Status: architectural contract for cockpit-diagnostics 1.0.0  
 > Target: Cockpit third-party application/plugin  
 > Primary stack: React + TypeScript + PatternFly + documented Cockpit APIs  
 > Initial posture: read-mostly, stateless, no custom daemon  
@@ -62,7 +62,7 @@ The diagnostics plugin may summarize or filter relevant information, but should 
 
 ### 2.3 Read-mostly by default
 
-v0.x should diagnose, not automatically fix.
+v1.0 diagnoses; it does not automatically fix.
 
 Do not:
 
@@ -185,59 +185,27 @@ Recommended structure:
 cockpit-diagnostics/
 ├── README.md
 ├── IMPLEMENTATION.md
-├── ROADMAP.md
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── LICENSE
 ├── package.json
-├── manifest.json
+├── packaging/cockpit-diagnostics.spec.in
+├── src/manifest.json
 ├── src/
+│   ├── app.tsx
 │   ├── app/
-│   │   ├── App.tsx
 │   │   ├── routes.ts
-│   │   └── navigation.ts
+│   │   └── useAsyncProvider.ts
 │   ├── components/
-│   │   ├── AsyncState.tsx
-│   │   ├── CapabilityNotice.tsx
-│   │   ├── DiagnosticStatus.tsx
-│   │   └── UnitLink.tsx
 │   ├── pages/
-│   │   ├── OverviewPage.tsx
-│   │   ├── BootPage.tsx
-│   │   ├── CrashesPage.tsx
-│   │   ├── FindingsPage.tsx
-│   │   ├── SecurityPage.tsx
-│   │   └── VerificationPage.tsx
 │   ├── providers/
-│   │   ├── capabilities.ts
-│   │   ├── command.ts
-│   │   ├── systemdAnalyze.ts
-│   │   ├── systemdUnits.ts
-│   │   ├── journal.ts
-│   │   ├── coredump.ts
-│   │   └── security.ts
 │   ├── parsers/
-│   │   ├── bootTime.ts
-│   │   ├── blame.ts
-│   │   ├── criticalChain.ts
-│   │   ├── coredump.ts
-│   │   ├── journal.ts
-│   │   └── security.ts
 │   ├── detectors/
-│   │   ├── oom.ts
-│   │   └── kernel.ts
 │   ├── types/
-│   │   ├── boot.ts
-│   │   ├── diagnostics.ts
-│   │   ├── findings.ts
-│   │   ├── security.ts
-│   │   └── providers.ts
-│   └── utils/
-│       ├── duration.ts
-│       ├── locale.ts
-│       └── errors.ts
+│   └── utils/cockpitLinks.ts
 ├── test/
-│   ├── fixtures/
-│   ├── parsers/
-│   └── ui/
-└── dist/
+├── preview/
+└── docs/manual-test-matrix.md
 ```
 
 This is guidance, not a requirement to create abstraction for abstraction's sake.
@@ -417,7 +385,7 @@ Diagnostics
 └── Verification
 ```
 
-Start smaller in v0.1.
+The v1.0 navigation is the set above. Do not add top-level pages.
 
 ### Deep links
 
@@ -568,7 +536,7 @@ SVG as an image cannot run script or navigate the Cockpit origin. Sanitization i
 
 ### 12.5 Historical boot comparison
 
-Not part of v0.x.
+Not part of v1.0.
 
 `systemd-analyze` timing information is primarily current-manager/current-boot state and is not a historical boot-time database.
 
@@ -600,7 +568,7 @@ For each failed unit show:
   - View service
   - View logs
 
-Do not add start/stop/restart buttons in this plugin in v0.x.
+Do not add start/stop/restart buttons in this plugin.
 
 The existing Services page owns service control.
 
@@ -631,7 +599,7 @@ Potential future actions:
 
 Do not automatically run debuggers or install debuginfo.
 
-Do not delete cores in v0.x.
+Do not delete cores in v1.0.
 
 ---
 
@@ -733,7 +701,7 @@ Run unprivileged. If a protected path later needs privilege, request it only for
 
 ## 18. System scope vs user scope
 
-v0.1 should prioritize the **system manager**.
+v1.0 covers the **system manager** only.
 
 A later release may add a clear scope selector:
 
@@ -790,7 +758,7 @@ Mandatory:
 - no remote upload of logs or diagnostics
 - no hidden telemetry
 - no credentials stored by this plugin
-- no custom root daemon in v0.x
+- no custom root daemon
 - least privilege
 
 The plugin must never transmit system diagnostic data off-host unless a future feature explicitly requests informed user consent.
@@ -882,7 +850,7 @@ Production UI should present concise errors.
 
 Never log sensitive journal contents unnecessarily.
 
-A future `Debug information` view may expose:
+A future `Debug information` view is post-1.0. If added, it may expose:
 
 - plugin version
 - Cockpit version if available
@@ -894,9 +862,11 @@ A future `Debug information` view may expose:
 
 ## 26. Milestones
 
-### v0.1 — Boot diagnostics foundation
+Feature work through v0.5 is **complete**. v1.0.0 is the packaging, documentation, testing, and hardening release of that feature set.
 
-Implement only:
+### v0.1 — Boot diagnostics foundation — complete
+
+Shipped:
 
 1. Cockpit package shell
 2. Overview page
@@ -909,90 +879,87 @@ Implement only:
 9. stable links to existing Cockpit pages where supported
 10. parser and basic UI tests
 
-Do not implement crashes, journal correlation, security analysis, verification, historical persistence, or automatic fixes yet.
+### v0.2 — Crashes — complete
 
-### v0.2 — Crashes
+Shipped: `coredumpctl` capability, Crashes page, current-boot filtering, crash detail drawer, links to Cockpit Logs.
 
-Add:
+### v0.3 — System Findings — complete
 
-- `coredumpctl` capability
-- Crashes page
-- current-boot filtering
-- crash detail drawer
-- links to relevant logs where feasible
+Shipped: `journalctl` capability, Findings page (not a journal browser), conservative current-boot OOM kill detection, high-priority kernel events (emerg/alert/crit/err), exact-message grouping, links to Cockpit Logs.
 
-### v0.3 — System Findings
+### v0.4 — systemd security — complete
 
-Add:
+Shipped: `systemd-analyze security`, service exposure table, per-setting detail, prominent non-vulnerability caveat.
 
-- `journalctl` capability
-- Findings page (not a journal browser)
-- conservative current-boot OOM kill detection
-- high-priority kernel events (emerg/alert/crit/err)
-- exact-message grouping for repeated kernel errors
-- links to Cockpit Logs as the raw evidence viewer
+### v0.5 — Boot visualization and verification — complete
 
-### v0.4 — systemd security
+Shipped: sanitized boot plot from `systemd-analyze plot` SVG; read-only unit verification from `systemd-analyze verify`.
 
-Add:
+v0.5 as implemented does **not** redesign the critical-chain tree. Critical-chain remains the v0.1 nested tree.
 
-- `systemd-analyze security`
-- service exposure table
-- per-setting detail
-- prominent score caveat
+### v1.0 — Stability, packaging, and release — complete as of 1.0.0
 
-### v0.5 — Boot visualization and verification
+Shipped:
 
-Add:
-
-- safe boot plot rendering from `systemd-analyze plot` SVG
-- optional unit verification from `systemd-analyze verify`
-
-v0.5 as implemented does **not** redesign the critical-chain tree. The milestone request was plot + verify only; critical-chain remains the v0.1 nested tree.
-
-### v1.0 — Stability/polish
-
-Require:
-
-- tested graceful degradation
-- accessibility review
-- packaging documentation
-- distro testing matrix
-- stable error behavior
-- translation readiness
-- no known shell-injection surfaces
-- no dependence on private Cockpit APIs
+- isolated providers and capability detection for implemented features only
+- accessibility and PatternFly consistency pass
+- RPM packaging (`cockpit-diagnostics` 1.0.0, noarch)
+- production install documentation (RPM and `make install PREFIX=/usr`)
+- `make devel-install` labeled development-only
+- English UI (incomplete demo translation removed)
+- argv-only command execution; no `sh -c`
+- plot SVG sanitization plus `<img>` isolation
+- boot-ID canonical/compact normalization
+- Cockpit shell routes for Logs and Services
+- Vitest coverage and GitHub Actions CI (lint, test, production build, RPM)
 
 ---
 
-## 27. Definition of done for v0.1
+## 27. Post-1.0 / Future Work
 
-v0.1 is complete when:
+Do not implement these unless a later specification explicitly opens them:
 
-- installation adds a working Diagnostics entry to Cockpit
-- Overview loads without requiring root for ordinary information
-- Boot page shows boot-phase timing when available
-- blame table is sortable
-- critical chain is readable and preserves hierarchy
-- UI visibly explains blame/critical-chain limitations
-- failed units are listed
-- a failure in any one provider does not break other sections
-- all command execution uses reviewed argv-style invocation
-- parsers have fixture-based tests
-- there is no persistent daemon
-- there is no local database
-- there is no automatic repair behavior
+- user-manager (`--user`) diagnostics and a system/user scope selector
+- historical boot comparison or any persistent diagnostic database
+- redesigned critical-chain visualization
+- suggested systemd hardening drop-ins or automatic sandboxing changes
+- coredump deletion, download, or GDB/debuginfo views
+- generic journal browser, live follow, or additional Findings detectors
+- CVE/vulnerability scanning or a system-wide security score
+- unit editing, daemon-reload, or service start/stop/restart from this plugin
+- a Debug information page (plugin/Cockpit/systemd versions and capability matrix)
+- complete translations beyond English
+- Fedora dist-git / COPR publication automation
+- rebuilding the JS bundle inside rpmbuild on every distro
+
+---
+
+## 28. Definition of done
+
+v0.1–v0.5 definitions remain historically valid. v1.0.0 is ready when:
+
+- installation adds a working Diagnostics entry to Cockpit from the RPM (no devel symlink)
+- all six pages load and degrade independently
+- Boot page shows boot-phase timing when available, plus plot when `plot` exists
+- blame table is sortable; critical chain preserves hierarchy
+- UI explains blame/critical-chain/security/verify limitations
+- failed units, current-boot coredumps, and conservative findings are listed
+- parsers have fixture-based tests including malformed and empty input
+- commands use argv-style invocation with timeouts and locale-stable parsing
+- there is no persistent daemon, local diagnostic database, or automatic repair
 - existing Cockpit service/log management is not duplicated
+- RPM installs to `/usr/share/cockpit/diagnostics/` and uninstalls cleanly
+- license notices from adapted Cockpit Starter Kit files are preserved
 
 ---
 
-## 28. Cursor/agent operating rules
+## 29. Cursor/agent operating rules
 
 When an AI coding agent works on this repository:
 
 1. Read this file completely before editing code.
 2. Inspect the existing repository before proposing new architecture.
-3. Implement only the active milestone.
+3. Implement only the requested work. Do not start post-1.0 features from section 27.
 4. Do not add speculative frameworks or abstractions.
 5. Do not add a daemon, database, API server, or shell wrapper unless this document is amended first.
 6. Prefer documented Cockpit APIs.
@@ -1001,30 +968,11 @@ When an AI coding agent works on this repository:
 9. Add tests for every new parser.
 10. Do not silently broaden scope.
 11. If a requirement conflicts with current Cockpit/systemd behavior, stop that sub-feature and document the conflict rather than inventing behavior.
-12. Before finishing a milestone, audit the implementation against this file and report deviations.
-
-Recommended first build prompt:
-
-```text
-Read IMPLEMENTATION.md completely and treat it as the architectural contract.
-
-Inspect the repository and current Cockpit Starter Kit structure.
-
-Implement only milestone v0.1. Before editing, produce a concise plan naming the files you expect to create or modify.
-
-Do not implement future milestones.
-Do not add a daemon or database.
-Do not duplicate Cockpit Services or Logs.
-Use documented Cockpit APIs and argv-based cockpit.spawn calls.
-Keep command execution, parsing, typed models, and UI separated.
-Add fixture-based parser tests.
-
-After implementation, audit the result against the v0.1 Definition of Done and report any remaining gaps.
-```
+12. Before finishing, audit the implementation against this file and report deviations.
 
 ---
 
-## 29. Technical references
+## 30. Technical references
 
 Use current upstream documentation while implementing; do not treat this list as frozen API documentation.
 

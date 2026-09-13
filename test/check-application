@@ -18,32 +18,39 @@ class TestApplication(testlib.MachineCase):
         self.login_and_go("/diagnostics")
         b.wait_visible("#diagnostics-overview")
         b.wait_text("#diagnostics-overview", "Overview")
+        b.wait_in_text(".pf-v6-c-card__title", "Failed units")
 
-        # Boot page is reachable from in-app navigation
         b.click(".pf-v6-c-nav__link:contains('Boot')")
         b.wait_visible("#diagnostics-boot")
         b.wait_in_text("#diagnostics-boot", "Boot")
         b.wait_in_text(".pf-v6-c-card__title", "Total boot timing")
         b.wait_in_text(".pf-v6-c-alert__title", "Activation time is not the same as boot delay")
 
-        # Overview still works after navigating back
+        b.click(".pf-v6-c-nav__link:contains('Crashes')")
+        b.wait_visible("#diagnostics-crashes")
+        b.wait_in_text("#diagnostics-crashes", "Crashes")
+
+        b.click(".pf-v6-c-nav__link:contains('Findings')")
+        b.wait_visible("#diagnostics-findings")
+        b.wait_in_text("#diagnostics-findings", "Findings")
+
+        b.click(".pf-v6-c-nav__link:contains('Security')")
+        b.wait_visible("#diagnostics-security")
+        b.wait_in_text("#diagnostics-security", "Security")
+        b.wait_in_text(".pf-v6-c-alert__title", "not a vulnerability scan")
+
+        b.click(".pf-v6-c-nav__link:contains('Verification')")
+        b.wait_visible("#diagnostics-verification")
+        b.wait_in_text("#diagnostics-verification", "Verification")
+
         b.click(".pf-v6-c-nav__link:contains('Overview')")
         b.wait_visible("#diagnostics-overview")
-        b.wait_in_text(".pf-v6-c-card__title", "Failed units")
 
-        # change language to German
-        b.switch_to_top()
-        b.click("#toggle-menu")
-        b.click("button.display-language-menu")
-        b.wait_popup('display-language-modal')
-        b.click("#display-language-modal [data-value='de-de'] button")
-        b.click("#display-language-modal button.pf-m-primary")
-        b.wait_visible("#content")
-        b.wait_text("#host-apps a[href='/diagnostics']", "Diagnose")
-
-        b.go("/diagnostics")
-        b.enter_page("/diagnostics")
-        b.wait_in_text("#diagnostics-overview", "Übersicht")
+        b.set_window_size(390, 844)
+        b.wait_visible("#diagnostics-overview")
+        b.click(".pf-v6-c-nav__link:contains('Boot')")
+        b.wait_visible("#diagnostics-boot")
+        b.wait_in_text(".pf-v6-c-card__title", "Total boot timing")
 
 
 if __name__ == '__main__':

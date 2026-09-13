@@ -16,14 +16,16 @@
 /Test*.png
 /*.whl
 /bots
+/build/
 /cockpit-*.spec
 /cockpit-*.tar.xz
-/cockpit-navigator.spec
 /dist/
 /metafile.json
+/output/
 /package-lock.json
 /pkg/
 /node_modules/
+/rpmbuild/
 /runtime-npm-modules.txt
 /tmp/
 /tools/

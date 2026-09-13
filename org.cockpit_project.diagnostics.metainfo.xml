@@ -2,6 +2,7 @@
 <component type="addon">
   <id>org.cockpit_project.diagnostics</id>
   <metadata_license>CC0-1.0</metadata_license>
+  <project_license>LGPL-2.1-or-later</project_license>
   <name>Diagnostics</name>
   <summary>systemd boot, unit, crash, findings, service hardening, and unit verification for Cockpit</summary>
   <description>
@@ -19,9 +20,7 @@
   </description>
   <extends>org.cockpit_project.cockpit</extends>
   <launchable type="cockpit-manifest">diagnostics</launchable>
-  <url type="homepage">https://github.com/cockpit-project/starter-kit</url>
-  <update_contact>cockpit-devel_AT_lists.fedorahosted.org</update_contact>
-  <developer id="org.cockpit-project">
-    <name>Cockpit Project</name>
+  <developer id="org.cockpit_project.diagnostics">
+    <name>cockpit-diagnostics contributors</name>
   </developer>
 </component>
