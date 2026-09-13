@@ -12,7 +12,9 @@ const UNIT_NAME_RE = /^[A-Za-z0-9_.@\\-]+\.[A-Za-z][A-Za-z0-9-]*$/;
  * finding list.
  */
 export function parseVerifyOutput(output: string, requestedUnit: string): VerificationResult {
-    const lines = stripAnsi(output).replace(/^\uFEFF/, "").split(/\r?\n/);
+    const lines = stripAnsi(output)
+            .replace(/^\uFEFF/, "")
+            .split(/\r?\n/);
     const findings: VerificationFinding[] = [];
     let pending: VerificationFinding | undefined;
 
