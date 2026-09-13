@@ -29,6 +29,13 @@ export async function runCommand(argv: string[], options?: RunCommandOptions): P
         environ,
     });
 
+    /*
+     * Cockpit spawn delivers stdout to `.stream()` when a streamer is
+     * attached, and then resolves the promise with "". v0.5 attached a
+     * streamer for verify and used `data ?? streamed`, which kept the empty
+     * string and dropped the real output. Prefer the promise result when it
+     * is non-empty (unit-test mocks); otherwise use the streamed buffer.
+     */
     let streamed = "";
     process.stream?.(chunk => {
         streamed += String(chunk);
@@ -37,7 +44,7 @@ export async function runCommand(argv: string[], options?: RunCommandOptions): P
     const timer = window.setTimeout(() => process.close("timeout"), timeoutMs);
     try {
         const data = await process;
-        return String(data ?? streamed ?? "");
+        return firstNonEmptyOutput(data, streamed);
     } catch (error) {
         if (options?.outputOnFailure && canReturnFailureOutput(error, streamed))
             return failureOutput(error, streamed);
@@ -45,6 +52,13 @@ export async function runCommand(argv: string[], options?: RunCommandOptions): P
     } finally {
         window.clearTimeout(timer);
     }
+}
+
+function firstNonEmptyOutput(data: unknown, streamed: string): string {
+    const resolved = data == null ? "" : String(data);
+    if (resolved !== "")
+        return resolved;
+    return streamed;
 }
 
 function canReturnFailureOutput(error: unknown, streamed: string): boolean {

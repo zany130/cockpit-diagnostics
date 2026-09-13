@@ -10,6 +10,7 @@ import {
 import { runCommand } from "./command";
 
 const COREDUMP_TIMEOUT_MS = 20_000;
+/** Current kernel boot UUID. Direct kernel source; not journalctl --list-boots. */
 const BOOT_ID_PATH = "/proc/sys/kernel/random/boot_id";
 
 export async function loadCoredumps(): Promise<CoredumpEntry[]> {
