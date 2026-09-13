@@ -40,6 +40,11 @@ const { loadFindings } = vi.hoisted(() => ({
     loadFindings: vi.fn(),
 }));
 
+const { loadSecuritySummaries, loadSecurityDetails } = vi.hoisted(() => ({
+    loadSecuritySummaries: vi.fn(),
+    loadSecurityDetails: vi.fn(),
+}));
+
 vi.mock("../../src/providers/systemdUnits", () => ({
     loadFailedUnits,
 }));
@@ -52,11 +57,17 @@ vi.mock("../../src/providers/journal", () => ({
     loadFindings,
 }));
 
+vi.mock("../../src/providers/security", () => ({
+    loadSecuritySummaries,
+    loadSecurityDetails,
+}));
+
 const capabilities: DiagnosticCapabilities = {
     systemdAnalyze: true,
     systemdAnalyzeTime: true,
     systemdAnalyzeBlame: true,
     systemdAnalyzeCriticalChain: true,
+    systemdAnalyzeSecurity: true,
     systemctl: true,
     coredumpctl: true,
     journalctl: true,
@@ -76,6 +87,10 @@ describe("Application navigation", () => {
         loadFailedUnits.mockResolvedValue([]);
         loadCoredumps.mockResolvedValue([]);
         loadFindings.mockResolvedValue({ findings: [], truncated: false, incomplete: false });
+        loadSecuritySummaries.mockReset();
+        loadSecurityDetails.mockReset();
+        loadSecuritySummaries.mockResolvedValue([]);
+        loadSecurityDetails.mockResolvedValue({ unit: "unused.service", checks: [] });
     });
 
     it("switches from Overview to Boot when the Boot nav item is clicked", async () => {
@@ -107,5 +122,26 @@ describe("Application navigation", () => {
         await user.click(screen.getByRole("link", { name: "Findings" }));
         expect(await screen.findByRole("heading", { name: "Findings" })).toBeInTheDocument();
         expect(screen.getByText(/not a journal browser/)).toBeInTheDocument();
+        expect(loadSecuritySummaries).not.toHaveBeenCalled();
+    });
+
+    it("does not load security analysis on Overview", async () => {
+        render(<Application />);
+        expect(await screen.findByRole("heading", { name: "Overview" })).toBeInTheDocument();
+        expect(loadSecuritySummaries).not.toHaveBeenCalled();
+        expect(loadSecurityDetails).not.toHaveBeenCalled();
+    });
+
+    it("opens the Security page from the sidebar", async () => {
+        const user = userEvent.setup();
+        render(<Application />);
+
+        expect(await screen.findByRole("heading", { name: "Overview" })).toBeInTheDocument();
+        await user.click(screen.getByRole("link", { name: "Security" }));
+        expect(await screen.findByRole("heading", { name: "systemd service hardening" })).toBeInTheDocument();
+        expect(screen.getByText(/not a vulnerability scan/)).toBeInTheDocument();
+        expect(loadSecuritySummaries).toHaveBeenCalled();
+        expect(loadCoredumps).toHaveBeenCalledTimes(1);
+        expect(loadFindings).toHaveBeenCalledTimes(1);
     });
 });

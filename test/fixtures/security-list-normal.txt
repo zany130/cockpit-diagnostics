@@ -1,0 +1,26 @@
+[
+  {
+    "unit": "systemd-journald.service",
+    "exposure": "2.1",
+    "predicate": "OK",
+    "happy": "🙂"
+  },
+  {
+    "unit": "NetworkManager.service",
+    "exposure": "6.8",
+    "predicate": "MEDIUM",
+    "happy": "😐"
+  },
+  {
+    "unit": "example.service",
+    "exposure": "8.4",
+    "predicate": "EXPOSED",
+    "happy": "🙁"
+  },
+  {
+    "unit": "legacy.service",
+    "exposure": "9.2",
+    "predicate": "UNSAFE",
+    "happy": "😨"
+  }
+]

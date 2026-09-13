@@ -1,0 +1,10 @@
+[
+  {
+    "set": true,
+    "name": "NoNewPrivileges=",
+    "json_field": "NoNewPrivileges",
+    "description": "Service processes cannot acquire new privileges",
+    "exposure": null,
+    "unexpected": true
+  }
+]

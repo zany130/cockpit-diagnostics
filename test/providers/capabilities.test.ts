@@ -39,13 +39,13 @@ describe("detectCapabilities", () => {
             systemdAnalyzeTime: true,
             systemdAnalyzeBlame: true,
             systemdAnalyzeCriticalChain: true,
+            systemdAnalyzeSecurity: true,
             systemctl: true,
             coredumpctl: true,
             journalctl: true,
             systemdVersion: 255,
         });
         expect(caps).not.toHaveProperty("systemdAnalyzePlot");
-        expect(caps).not.toHaveProperty("systemdAnalyzeSecurity");
 
         const commands = vi.mocked(cockpit.spawn).mock.calls.map(call => call[0][0]);
         expect(commands).toEqual(expect.arrayContaining(["systemd-analyze", "systemctl", "coredumpctl", "journalctl"]));
@@ -66,6 +66,7 @@ describe("detectCapabilities", () => {
 
         const caps = await detectCapabilities();
         expect(caps.systemdAnalyze).toBe(false);
+        expect(caps.systemdAnalyzeSecurity).toBe(false);
         expect(caps.systemctl).toBe(true);
         expect(caps.coredumpctl).toBe(false);
         expect(caps.journalctl).toBe(false);

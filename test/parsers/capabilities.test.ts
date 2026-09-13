@@ -10,6 +10,7 @@ describe("capability parsing", () => {
         expect(features.time).toBe(true);
         expect(features.blame).toBe(true);
         expect(features.criticalChain).toBe(true);
+        expect(features.security).toBe(true);
     });
 
     it("parses the systemd version", () => {
@@ -20,6 +21,13 @@ describe("capability parsing", () => {
         const features = parseAnalyzeHelp("systemd-analyze\n  time\n");
         expect(features.blame).toBe(false);
         expect(features.criticalChain).toBe(false);
+        expect(features.security).toBe(false);
+    });
+
+    it("does not treat --security-policy as the security subcommand", () => {
+        const features = parseAnalyzeHelp("systemd-analyze\n  --security-policy=PATH\n  time\n");
+        expect(features.security).toBe(false);
+        expect(features.time).toBe(true);
     });
 });
 

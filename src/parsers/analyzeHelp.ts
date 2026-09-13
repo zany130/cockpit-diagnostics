@@ -2,6 +2,7 @@ export interface AnalyzeHelpFeatures {
     time: boolean;
     blame: boolean;
     criticalChain: boolean;
+    security: boolean;
 }
 
 export function parseSystemdVersion(output: string): number | undefined {
@@ -18,5 +19,6 @@ export function parseAnalyzeHelp(output: string): AnalyzeHelpFeatures {
         time: /(^|\s)\[time\]|\btime\b/.test(text),
         blame: /\bblame\b/.test(text),
         criticalChain: /\bcritical-chain\b/.test(text),
+        security: /\bsecurity\s+\[unit/.test(text),
     };
 }

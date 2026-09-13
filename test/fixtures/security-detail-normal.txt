@@ -1,0 +1,58 @@
+[
+  {
+    "set": false,
+    "name": "SystemCallFilter=~@resources",
+    "json_field": "SystemCallFilter_resources",
+    "description": "System call allow list defined for service, and @resources is included (e.g. ioprio_set is allowed)",
+    "exposure": "0.2"
+  },
+  {
+    "set": false,
+    "name": "SystemCallFilter=~@privileged",
+    "json_field": "SystemCallFilter_privileged",
+    "description": "System call allow list defined for service, and @privileged is included (e.g. chown is allowed)",
+    "exposure": "0.2"
+  },
+  {
+    "set": false,
+    "name": "User=/DynamicUser=",
+    "json_field": "UserOrDynamicUser",
+    "description": "Service runs as root user",
+    "exposure": "0.4"
+  },
+  {
+    "set": true,
+    "name": "SystemCallFilter=~@swap",
+    "json_field": "SystemCallFilter_swap",
+    "description": "System call allow list defined for service, and @swap is not included",
+    "exposure": null
+  },
+  {
+    "set": true,
+    "name": "SystemCallFilter=~@reboot",
+    "json_field": "SystemCallFilter_reboot",
+    "description": "System call allow list defined for service, and @reboot is not included",
+    "exposure": null
+  },
+  {
+    "set": true,
+    "name": "SystemCallFilter=~@raw-io",
+    "json_field": "SystemCallFilter_raw_io",
+    "description": "System call allow list defined for service, and @raw-io is not included",
+    "exposure": null
+  },
+  {
+    "set": null,
+    "name": "PrivateTmp=",
+    "json_field": "PrivateTmp",
+    "description": "Service runs in special boot phase, option is not appropriate",
+    "exposure": null
+  },
+  {
+    "set": null,
+    "name": "ProtectHome=",
+    "json_field": "ProtectHome",
+    "description": "Service runs in special boot phase, option is not appropriate",
+    "exposure": null
+  }
+]

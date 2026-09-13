@@ -61,9 +61,30 @@
     font-weight: var(--pf-t--global--font--weight--heading);
 }
 
-.diagnostics-finding-message {
-    white-space: pre-wrap;
+.diagnostics-security-checks {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.diagnostics-security-check {
+    display: flex;
+    gap: var(--pf-t--global--spacer--sm);
+    align-items: flex-start;
+    padding-block: var(--pf-t--global--spacer--xs);
+}
+
+.diagnostics-security-check-name {
+    font-weight: var(--pf-t--global--font--weight--heading);
     overflow-wrap: anywhere;
+}
+
+.diagnostics-security-state {
+    display: inline-flex;
+    flex-shrink: 0;
+    gap: var(--pf-t--global--spacer--xs);
+    align-items: center;
+    min-width: 8rem;
 }
 
 .diagnostics-chain-node {

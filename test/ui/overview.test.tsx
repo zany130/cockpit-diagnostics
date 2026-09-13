@@ -24,6 +24,10 @@ const { loadFindings } = vi.hoisted(() => ({
     loadFindings: vi.fn(),
 }));
 
+const { loadSecuritySummaries } = vi.hoisted(() => ({
+    loadSecuritySummaries: vi.fn(),
+}));
+
 vi.mock("../../src/providers/systemdAnalyze", () => ({
     loadBootSummary,
     loadCriticalChain,
@@ -42,11 +46,17 @@ vi.mock("../../src/providers/journal", () => ({
     loadFindings,
 }));
 
+vi.mock("../../src/providers/security", () => ({
+    loadSecuritySummaries,
+    loadSecurityDetails: vi.fn(),
+}));
+
 const capabilities: DiagnosticCapabilities = {
     systemdAnalyze: true,
     systemdAnalyzeTime: true,
     systemdAnalyzeBlame: true,
     systemdAnalyzeCriticalChain: true,
+    systemdAnalyzeSecurity: true,
     systemctl: true,
     systemdVersion: 255,
     coredumpctl: true,
@@ -82,6 +92,7 @@ describe("OverviewPage", () => {
         loadBlame.mockReset();
         loadCoredumps.mockReset();
         loadFindings.mockReset();
+        loadSecuritySummaries.mockReset();
         loadBootSummary.mockResolvedValue(boot);
         loadCriticalChain.mockResolvedValue([{ unit: "multi-user.target", activatedAtUs: 32_786_000, children: [] }]);
         loadFailedUnits.mockResolvedValue(failed);
@@ -103,6 +114,12 @@ describe("OverviewPage", () => {
         expect(screen.queryByText(/Health:\s*\d/)).not.toBeInTheDocument();
         expect(screen.queryByRole("button", { name: /start/i })).not.toBeInTheDocument();
         expect(screen.queryByRole("button", { name: /restart/i })).not.toBeInTheDocument();
+        expect(screen.getByText("Security")).toBeInTheDocument();
+        expect(screen.getByText("systemd hardening analysis available")).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Review services" })).toBeInTheDocument();
+        expect(loadSecuritySummaries).not.toHaveBeenCalled();
+        expect(screen.queryByText(/vulnerability score/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/system security score/i)).not.toBeInTheDocument();
     });
 
     it("shows an empty failed-unit state", async () => {
@@ -122,6 +139,7 @@ describe("OverviewPage", () => {
         expect(loadFailedUnits).toHaveBeenCalledTimes(2);
         expect(loadCoredumps).toHaveBeenCalledTimes(2);
         expect(loadFindings).toHaveBeenCalledTimes(2);
+        expect(loadSecuritySummaries).not.toHaveBeenCalled();
     });
 
     it("keeps failed units visible when boot timing fails", async () => {
@@ -257,5 +275,30 @@ describe("OverviewPage", () => {
             />
         );
         expect(screen.getByText(/journalctl is not available/)).toBeInTheDocument();
+    });
+
+    it("opens the Security page from the teaser without running analysis on Overview", async () => {
+        const user = userEvent.setup();
+        render(<OverviewPage capabilities={capabilities} onRefresh={() => undefined} />);
+        expect(await screen.findByText("systemd hardening analysis available")).toBeInTheDocument();
+        expect(loadSecuritySummaries).not.toHaveBeenCalled();
+        await user.click(screen.getByRole("button", { name: "Review services" }));
+        expect(cockpit.location.path).toEqual(["security"]);
+        expect(loadSecuritySummaries).not.toHaveBeenCalled();
+    });
+
+    it("keeps Boot, Crashes, and Findings visible when security analysis is unavailable", async () => {
+        render(
+            <OverviewPage
+                capabilities={{ ...capabilities, systemdAnalyzeSecurity: false }}
+                onRefresh={() => undefined}
+            />
+        );
+        expect(await screen.findByText("Boot completed in 1 min 9.608 s")).toBeInTheDocument();
+        expect(await screen.findByText("foo.service")).toBeInTheDocument();
+        expect(await screen.findByRole("button", { name: "No coredumps this boot" })).toBeInTheDocument();
+        expect(await screen.findByRole("button", { name: "No supported findings this boot" })).toBeInTheDocument();
+        expect(screen.getByText(/systemd-analyze security is not available/)).toBeInTheDocument();
+        expect(loadSecuritySummaries).not.toHaveBeenCalled();
     });
 });

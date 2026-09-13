@@ -1,0 +1,11 @@
+[
+  {
+    "set": false
+  },
+  {
+    "name": "PrivateTmp=",
+    "json_field": "PrivateTmp",
+    "set": true,
+    "description": "Temporary directories are private"
+  }
+]

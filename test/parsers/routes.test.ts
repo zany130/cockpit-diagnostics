@@ -17,6 +17,10 @@ describe("routes", () => {
         expect(pageFromPath(["findings"])).toBe("findings");
     });
 
+    it("treats security as the Security page", () => {
+        expect(pageFromPath(["security"])).toBe("security");
+    });
+
     it("follows cockpit.location and hash updates", () => {
         cockpit.location.path = [];
         window.location.hash = "";
@@ -32,6 +36,9 @@ describe("routes", () => {
 
         cockpit.location.go(["findings"]);
         expect(currentPage()).toBe("findings");
+
+        cockpit.location.go(["security"]);
+        expect(currentPage()).toBe("security");
 
         cockpit.location.go([]);
         expect(currentPage()).toBe("overview");

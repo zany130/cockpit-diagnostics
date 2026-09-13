@@ -1,0 +1,184 @@
+[
+  {
+    "set": false,
+    "name": "SystemCallFilter=~@resources",
+    "json_field": "SystemCallFilter_resources",
+    "description": "System call allow list defined for service, and @resources is included (e.g. ioprio_set is allowed)",
+    "exposure": "0.2"
+  },
+  {
+    "set": false,
+    "name": "SystemCallFilter=~@privileged",
+    "json_field": "SystemCallFilter_privileged",
+    "description": "System call allow list defined for service, and @privileged is included (e.g. chown is allowed)",
+    "exposure": "0.2"
+  },
+  {
+    "set": false,
+    "name": "User=/DynamicUser=",
+    "json_field": "UserOrDynamicUser",
+    "description": "Service runs as root user",
+    "exposure": "0.4"
+  },
+  {
+    "set": false,
+    "name": "PrivateDevices=",
+    "json_field": "PrivateDevices",
+    "description": "Service potentially has access to hardware devices",
+    "exposure": "0.2"
+  },
+  {
+    "set": false,
+    "name": "ProtectKernelLogs=",
+    "json_field": "ProtectKernelLogs",
+    "description": "Service may read from or write to the kernel log ring buffer",
+    "exposure": "0.2"
+  },
+  {
+    "set": false,
+    "name": "CapabilityBoundingSet=~CAP_(DAC_*|FOWNER|IPC_OWNER)",
+    "json_field": "CapabilityBoundingSet_CAP_DAC_FOWNER_IPC_OWNER",
+    "description": "Service may override UNIX file/IPC permission checks",
+    "exposure": "0.2"
+  },
+  {
+    "set": false,
+    "name": "ProtectControlGroups=",
+    "json_field": "ProtectControlGroups",
+    "description": "Service may modify the control group file system",
+    "exposure": "0.2"
+  },
+  {
+    "set": false,
+    "name": "ProtectKernelModules=",
+    "json_field": "ProtectKernelModules",
+    "description": "Service may load or read kernel modules",
+    "exposure": "0.2"
+  },
+  {
+    "set": false,
+    "name": "ProtectHostname=",
+    "json_field": "ProtectHostname",
+    "description": "Service may change system host/domainname",
+    "exposure": "0.1"
+  },
+  {
+    "set": false,
+    "name": "CapabilityBoundingSet=~CAP_(CHOWN|FSETID|SETFCAP)",
+    "json_field": "CapabilityBoundingSet_CAP_CHOWN_FSETID_SETFCAP",
+    "description": "Service may change file ownership/access mode/capabilities unrestricted",
+    "exposure": "0.2"
+  },
+  {
+    "set": false,
+    "name": "CapabilityBoundingSet=~CAP_SET(UID|GID|PCAP)",
+    "json_field": "CapabilityBoundingSet_CAP_SET_UID_GID_PCAP",
+    "description": "Service may change UID/GID identities/capabilities",
+    "exposure": "0.3"
+  },
+  {
+    "set": false,
+    "name": "ProtectKernelTunables=",
+    "json_field": "ProtectKernelTunables",
+    "description": "Service may alter kernel tunables",
+    "exposure": "0.2"
+  },
+  {
+    "set": true,
+    "name": "SystemCallFilter=~@swap",
+    "json_field": "SystemCallFilter_swap",
+    "description": "System call allow list defined for service, and @swap is not included",
+    "exposure": null
+  },
+  {
+    "set": true,
+    "name": "SystemCallFilter=~@reboot",
+    "json_field": "SystemCallFilter_reboot",
+    "description": "System call allow list defined for service, and @reboot is not included",
+    "exposure": null
+  },
+  {
+    "set": true,
+    "name": "SystemCallFilter=~@raw-io",
+    "json_field": "SystemCallFilter_raw_io",
+    "description": "System call allow list defined for service, and @raw-io is not included",
+    "exposure": null
+  },
+  {
+    "set": true,
+    "name": "SystemCallFilter=~@obsolete",
+    "json_field": "SystemCallFilter_obsolete",
+    "description": "System call allow list defined for service, and @obsolete is not included",
+    "exposure": null
+  },
+  {
+    "set": true,
+    "name": "SystemCallFilter=~@mount",
+    "json_field": "SystemCallFilter_mount",
+    "description": "System call allow list defined for service, and @mount is not included",
+    "exposure": null
+  },
+  {
+    "set": true,
+    "name": "SystemCallFilter=~@module",
+    "json_field": "SystemCallFilter_module",
+    "description": "System call allow list defined for service, and @module is not included",
+    "exposure": null
+  },
+  {
+    "set": true,
+    "name": "SystemCallFilter=~@debug",
+    "json_field": "SystemCallFilter_debug",
+    "description": "System call allow list defined for service, and @debug is not included",
+    "exposure": null
+  },
+  {
+    "set": true,
+    "name": "SystemCallFilter=~@cpu-emulation",
+    "json_field": "SystemCallFilter_cpu_emulation",
+    "description": "System call allow list defined for service, and @cpu-emulation is not included",
+    "exposure": null
+  },
+  {
+    "set": null,
+    "name": "PrivateTmp=",
+    "json_field": "PrivateTmp",
+    "description": "Service runs in special boot phase, option is not appropriate",
+    "exposure": null
+  },
+  {
+    "set": null,
+    "name": "ProtectHome=",
+    "json_field": "ProtectHome",
+    "description": "Service runs in special boot phase, option is not appropriate",
+    "exposure": null
+  },
+  {
+    "set": null,
+    "name": "ProtectSystem=",
+    "json_field": "ProtectSystem",
+    "description": "Service runs in special boot phase, option is not appropriate",
+    "exposure": null
+  },
+  {
+    "set": null,
+    "name": "RootDirectory=/RootImage=",
+    "json_field": "RootDirectoryOrRootImage",
+    "description": "Service runs in special boot phase, option is not appropriate",
+    "exposure": null
+  },
+  {
+    "set": null,
+    "name": "SupplementaryGroups=",
+    "json_field": "SupplementaryGroups",
+    "description": "Service runs as root, option does not matter",
+    "exposure": null
+  },
+  {
+    "set": null,
+    "name": "RemoveIPC=",
+    "json_field": "RemoveIPC",
+    "description": "Service runs as root, option does not apply",
+    "exposure": null
+  }
+]

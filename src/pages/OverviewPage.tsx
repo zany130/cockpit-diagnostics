@@ -97,6 +97,9 @@ export const OverviewPage = ({ capabilities, onRefresh, lastRefreshed }: {
                 <GridItem md={6} xl={4}>
                     <FindingsOverviewCard capabilities={capabilities} findings={findings} />
                 </GridItem>
+                <GridItem md={6} xl={4}>
+                    <SecurityOverviewCard capabilities={capabilities} />
+                </GridItem>
             </Grid>
         </PageSection>
     );
@@ -377,6 +380,45 @@ const FindingsOverviewCard = ({
         </Card>
     );
 };
+
+const SecurityOverviewCard = ({
+    capabilities,
+}: {
+    capabilities: DiagnosticCapabilities;
+}) => (
+    <Card isCompact>
+        <CardHeader>
+            <CardTitle>
+                <Title headingLevel="h3" size="md">{_("Security")}</Title>
+            </CardTitle>
+        </CardHeader>
+        <CardBody>
+            {!capabilities.systemdAnalyze || !capabilities.systemdAnalyzeSecurity
+                ? (
+                    <CapabilityNotice>
+                        {_("systemd-analyze security is not available, so hardening analysis cannot be opened.")}
+                    </CapabilityNotice>
+                )
+                : (
+                    <>
+                        <Content component="p" className="diagnostics-overview-lead">
+                            <Button variant="link" isInline onClick={() => goToPage("security")}>
+                                {_("systemd hardening analysis available")}
+                            </Button>
+                        </Content>
+                        <HelperText>
+                            <HelperTextItem>
+                                {_("Reviews systemd sandboxing settings for system services. This is not a CVE scan.")}
+                            </HelperTextItem>
+                        </HelperText>
+                    </>
+                )}
+        </CardBody>
+        <CardFooter>
+            <Button variant="link" isInline onClick={() => goToPage("security")}>{_("Review services")}</Button>
+        </CardFooter>
+    </Card>
+);
 
 export const FailedUnitTable = ({ units }: { units: FailedUnit[] }) => (
     <Table variant="compact" gridBreakPoint="grid-md" aria-label={_("Failed units")}>

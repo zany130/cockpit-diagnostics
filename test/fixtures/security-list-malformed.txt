@@ -1,0 +1,13 @@
+[
+  {
+    "unit": "ok.service",
+    "exposure": "1.2",
+    "predicate": "OK"
+  },
+  "not-an-object",
+  {
+    "unit": "also.service",
+    "exposure": "4.0",
+    "predicate": "MEDIUM"
+  }
+]

@@ -10,6 +10,7 @@ const EMPTY_CAPABILITIES: DiagnosticCapabilities = {
     systemdAnalyzeTime: false,
     systemdAnalyzeBlame: false,
     systemdAnalyzeCriticalChain: false,
+    systemdAnalyzeSecurity: false,
     systemctl: false,
     coredumpctl: false,
     journalctl: false,
@@ -61,6 +62,7 @@ async function probeAnalyze(): Promise<Partial<DiagnosticCapabilities>> {
             systemdAnalyzeTime: features.time,
             systemdAnalyzeBlame: features.blame,
             systemdAnalyzeCriticalChain: features.criticalChain,
+            systemdAnalyzeSecurity: features.security,
         };
         const version = parseSystemdVersion(versionOutput || help);
         if (version !== undefined)

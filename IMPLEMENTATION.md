@@ -210,7 +210,8 @@ cockpit-diagnostics/
 │   │   ├── systemdAnalyze.ts
 │   │   ├── systemdUnits.ts
 │   │   ├── journal.ts
-│   │   └── coredump.ts
+│   │   ├── coredump.ts
+│   │   └── security.ts
 │   ├── parsers/
 │   │   ├── bootTime.ts
 │   │   ├── blame.ts
@@ -225,6 +226,7 @@ cockpit-diagnostics/
 │   │   ├── boot.ts
 │   │   ├── diagnostics.ts
 │   │   ├── findings.ts
+│   │   ├── security.ts
 │   │   └── providers.ts
 │   └── utils/
 │       ├── duration.ts
@@ -663,12 +665,22 @@ The UI must explicitly explain:
 
 > `systemd-analyze security` evaluates how strongly a service uses systemd sandboxing and security-related settings. Its exposure score is not a guarantee that software is secure or insecure.
 
+v0.4 (verified against systemd 255):
+
+- Analyze the **system manager** only. Label the scope as system services. Do not mix user-manager units.
+- Summary: `systemd-analyze --system --no-pager --json=short security` lists currently loaded long-running `.service` units (oneshot units are skipped). JSON objects use `unit`, `exposure` (decimal string 0.0–10.0 in systemd 255; a JSON number is also accepted), `predicate` (assessment), and `happy` (ignore in the UI).
+- Detail: the same command with one unit name returns the per-setting table as JSON objects with `set`, `name`, `json_field`, `description`, and `exposure`.
+- Assessment labels come from systemd: `PERFECT`, `SAFE`, `OK`, `MEDIUM`, `EXPOSED`, `UNSAFE`, `DANGEROUS`. Do not invent replacements.
+- Run the all-unit summary once per page load/refresh. Lazy-load per-unit details when a row is opened. Do not poll. Do not persist a security database. Do not run this analysis on Overview.
+- Timeouts: 60 s for the all-unit summary, 25 s for one-unit details. Cache details in memory for the current Security page visit only.
+- Do not use `--offline` for the product path; that reviews unit files through a private manager, not the live system instance.
+
 Show:
 
 - service/unit
 - exposure level/score as reported by systemd
 - per-setting findings when available
-- description of what each setting means
+- description of what each setting means (from systemd JSON)
 - filtering/sorting
 
 Do not invent an independent security score.

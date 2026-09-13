@@ -1,0 +1,9 @@
+[
+  {
+    "unit": "only.service",
+    "exposure": 1.0,
+    "predicate": "SAFE",
+    "happy": "unused",
+    "extra": "ignored"
+  }
+]

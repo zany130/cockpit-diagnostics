@@ -1,0 +1,9 @@
+[
+  {
+    "unit": "partial.service"
+  },
+  {
+    "predicate": "UNSAFE",
+    "exposure": "9.9"
+  }
+]

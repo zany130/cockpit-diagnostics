@@ -20,14 +20,16 @@ export interface FailedUnit {
 }
 
 /**
- * Capability matrix for implemented milestones only. v0.3 adds journalctl.
- * Do not add plot or security probes until those milestones consume them.
+ * Capability matrix for implemented milestones only. v0.4 adds
+ * systemd-analyze security. Do not add plot or verify probes until those
+ * milestones consume them.
  */
 export interface DiagnosticCapabilities {
     systemdAnalyze: boolean;
     systemdAnalyzeTime: boolean;
     systemdAnalyzeBlame: boolean;
     systemdAnalyzeCriticalChain: boolean;
+    systemdAnalyzeSecurity: boolean;
     systemctl: boolean;
     coredumpctl: boolean;
     journalctl: boolean;

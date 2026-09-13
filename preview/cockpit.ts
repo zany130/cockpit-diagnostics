@@ -13,6 +13,8 @@ import coredumpInfoNginx from "../test/fixtures/coredump-info-core-missing.txt";
 import journalKernel from "../test/fixtures/journal-kernel-grouped.txt";
 import journalOomKernel from "../test/fixtures/journal-oom-kernel.txt";
 import journalOomd from "../test/fixtures/journal-oom-oomd.txt";
+import securityList from "../test/fixtures/security-list-normal.txt";
+import securityDetail from "../test/fixtures/security-detail-journald.txt";
 
 function ok(data: string) {
     return Object.assign(Promise.resolve(data), {
@@ -93,6 +95,12 @@ const cockpit = {
                 return ok(blameOutput);
             if (args.includes("critical-chain"))
                 return ok(chainOutput);
+            if (args.includes("security")) {
+                const unit = args.find(arg => arg.endsWith(".service"));
+                if (unit)
+                    return ok(securityDetail);
+                return ok(securityList);
+            }
             return ok(timeOutput);
         }
         if (args[0] === "systemctl") {
