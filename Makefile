@@ -144,9 +144,17 @@ $(NODE_CACHE): $(NODE_MODULES_TEST)
 
 node-cache: $(NODE_CACHE)
 
+# Fedora/mock satisfy BuildRequires as RPMs. Debian/Ubuntu have the same
+# tools as debs, so rpmbuild's dependency check fails unless we skip it.
+ifeq ($(shell rpm -q make >/dev/null 2>&1 && echo yes),yes)
+RPMBUILD_FLAGS ?=
+else
+RPMBUILD_FLAGS ?= --nodeps
+endif
+
 # convenience target for developers
 srpm: $(TARFILE) $(SPEC)
-	rpmbuild -bs \
+	rpmbuild -bs $(RPMBUILD_FLAGS) \
 	  --define "_sourcedir `pwd`" \
 	  --define "_srcrpmdir `pwd`" \
 	  $(SPEC)
@@ -157,7 +165,7 @@ srpm: $(TARFILE) $(SPEC)
 rpm: $(TARFILE) $(SPEC)
 	mkdir -p "`pwd`/output"
 	mkdir -p "`pwd`/rpmbuild"
-	rpmbuild -bb \
+	rpmbuild -bb $(RPMBUILD_FLAGS) \
 	  --define "_sourcedir `pwd`" \
 	  --define "_specdir `pwd`" \
 	  --define "_builddir `pwd`/rpmbuild" \

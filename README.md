@@ -163,7 +163,9 @@ Browser integration tests (`make check`) need Cockpit bots/VM images. See [docs/
 make rpm
 ```
 
-That produces a noarch RPM such as `cockpit-diagnostics-1.0.0-1.fc42.noarch.rpm` (the distro suffix depends on the build host). The package contains production Cockpit files under `/usr/share/cockpit/diagnostics/` plus AppStream metadata. It does not ship `node_modules`, tests, preview tooling, or the development symlink workflow.
+That produces a noarch RPM such as `cockpit-diagnostics-1.0.0-1.noarch.rpm` (Fedora adds a dist tag, for example `cockpit-diagnostics-1.0.0-1.fc42.noarch.rpm`). The package contains production Cockpit files under `/usr/share/cockpit/diagnostics/` plus AppStream metadata. It does not ship `node_modules`, tests, preview tooling, or the development symlink workflow.
+
+On Fedora, `make rpm` uses `rpmbuild` with normal BuildRequires. On Debian/Ubuntu the same tools are debs rather than RPMs, so `make rpm` passes `--nodeps` after the tools are installed.
 
 Inspect:
 

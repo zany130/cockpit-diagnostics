@@ -40,13 +40,13 @@ Security analysis is not a vulnerability scanner. Verification does
 not edit units, reload systemd, or start services.
 
 %prep
-%autosetup -n %{name}
+%setup -q -n %{name}
 
 %build
 # Bundle is already in dist/ from the source tarball.
 
 %install
-%make_install PREFIX=/usr
+make DESTDIR=%{buildroot} PREFIX=/usr install
 
 # drop source maps, they are large and just for debugging
 find %{buildroot}%{_datadir}/cockpit/diagnostics/ -name '*.map' | xargs --no-run-if-empty rm --verbose
