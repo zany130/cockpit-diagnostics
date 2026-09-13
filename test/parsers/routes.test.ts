@@ -21,6 +21,10 @@ describe("routes", () => {
         expect(pageFromPath(["security"])).toBe("security");
     });
 
+    it("treats verification as the Verification page", () => {
+        expect(pageFromPath(["verification"])).toBe("verification");
+    });
+
     it("follows cockpit.location and hash updates", () => {
         cockpit.location.path = [];
         window.location.hash = "";
@@ -39,6 +43,9 @@ describe("routes", () => {
 
         cockpit.location.go(["security"]);
         expect(currentPage()).toBe("security");
+
+        cockpit.location.go(["verification"]);
+        expect(currentPage()).toBe("verification");
 
         cockpit.location.go([]);
         expect(currentPage()).toBe("overview");

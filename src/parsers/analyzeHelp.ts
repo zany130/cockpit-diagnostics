@@ -3,6 +3,8 @@ export interface AnalyzeHelpFeatures {
     blame: boolean;
     criticalChain: boolean;
     security: boolean;
+    plot: boolean;
+    verify: boolean;
 }
 
 export function parseSystemdVersion(output: string): number | undefined {
@@ -20,5 +22,7 @@ export function parseAnalyzeHelp(output: string): AnalyzeHelpFeatures {
         blame: /\bblame\b/.test(text),
         criticalChain: /\bcritical-chain\b/.test(text),
         security: /\bsecurity\s+\[unit/.test(text),
+        plot: /^\s+plot\b/m.test(text),
+        verify: /^\s+verify\s+file\b/m.test(text),
     };
 }

@@ -11,6 +11,8 @@ describe("capability parsing", () => {
         expect(features.blame).toBe(true);
         expect(features.criticalChain).toBe(true);
         expect(features.security).toBe(true);
+        expect(features.plot).toBe(true);
+        expect(features.verify).toBe(true);
     });
 
     it("parses the systemd version", () => {
@@ -22,6 +24,16 @@ describe("capability parsing", () => {
         expect(features.blame).toBe(false);
         expect(features.criticalChain).toBe(false);
         expect(features.security).toBe(false);
+        expect(features.plot).toBe(false);
+        expect(features.verify).toBe(false);
+    });
+
+    it("does not treat plot's JSON option text as the plot command", () => {
+        const features = parseAnalyzeHelp(
+            "systemd-analyze\n  time\n     --json=pretty|short|off  plot's raw time data\n"
+        );
+        expect(features.plot).toBe(false);
+        expect(features.time).toBe(true);
     });
 
     it("does not treat --security-policy as the security subcommand", () => {

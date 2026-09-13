@@ -15,6 +15,10 @@ import journalOomKernel from "../test/fixtures/journal-oom-kernel.txt";
 import journalOomd from "../test/fixtures/journal-oom-oomd.txt";
 import securityList from "../test/fixtures/security-list-normal.txt";
 import securityDetail from "../test/fixtures/security-detail-journald.txt";
+import plotOutput from "../test/fixtures/plot-normal.txt";
+import unitFilesPlain from "../test/fixtures/unit-files-plain.txt";
+import verifyWarning from "../test/fixtures/verify-warning.txt";
+import verifyError from "../test/fixtures/verify-error.txt";
 
 function ok(data: string) {
     return Object.assign(Promise.resolve(data), {
@@ -101,11 +105,25 @@ const cockpit = {
                     return ok(securityDetail);
                 return ok(securityList);
             }
+            if (args.includes("plot"))
+                return ok(plotOutput);
+            if (args.includes("verify")) {
+                const unit = args[args.length - 1];
+                if (unit === "warn.service")
+                    return ok(verifyWarning);
+                if (unit === "foo.service")
+                    return ok("");
+                if (unit === "demo.service")
+                    return fail("", verifyError);
+                return ok("");
+            }
             return ok(timeOutput);
         }
         if (args[0] === "systemctl") {
             if (args.includes("--version"))
                 return ok(analyzeVersion);
+            if (args.includes("list-unit-files"))
+                return ok(unitFilesPlain);
             if (args.includes("list-units"))
                 return ok(failedPlain);
             if (args.includes("show"))
@@ -144,6 +162,15 @@ const cockpit = {
             call: async (_path: string, _iface: string, method: string) => {
                 if (method === "ListUnitsFiltered" || method === "ListUnits")
                     return [dbusUnits];
+                if (method === "ListUnitFiles")
+                    return [[
+                        ["apt-daily.service", "static"],
+                        ["console-getty.service", "disabled"],
+                        ["getty@.service", "enabled"],
+                        ["foo.service", "enabled"],
+                        ["warn.service", "static"],
+                        ["user.slice", "static"],
+                    ]];
                 throw Object.assign(new Error("unknown method"), { problem: "not-supported" });
             },
             close() {},

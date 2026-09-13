@@ -20,9 +20,8 @@ export interface FailedUnit {
 }
 
 /**
- * Capability matrix for implemented milestones only. v0.4 adds
- * systemd-analyze security. Do not add plot or verify probes until those
- * milestones consume them.
+ * Capability matrix for implemented milestones only. v0.5 adds
+ * systemd-analyze plot and verify.
  */
 export interface DiagnosticCapabilities {
     systemdAnalyze: boolean;
@@ -30,6 +29,8 @@ export interface DiagnosticCapabilities {
     systemdAnalyzeBlame: boolean;
     systemdAnalyzeCriticalChain: boolean;
     systemdAnalyzeSecurity: boolean;
+    systemdAnalyzePlot: boolean;
+    systemdAnalyzeVerify: boolean;
     systemctl: boolean;
     coredumpctl: boolean;
     journalctl: boolean;

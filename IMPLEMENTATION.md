@@ -203,7 +203,8 @@ cockpit-diagnostics/
 │   │   ├── BootPage.tsx
 │   │   ├── CrashesPage.tsx
 │   │   ├── FindingsPage.tsx
-│   │   └── SecurityPage.tsx
+│   │   ├── SecurityPage.tsx
+│   │   └── VerificationPage.tsx
 │   ├── providers/
 │   │   ├── capabilities.ts
 │   │   ├── command.ts
@@ -321,6 +322,7 @@ Example model:
 interface DiagnosticCapabilities {
   systemdAnalyze: boolean;
   systemdAnalyzePlot: boolean;
+  systemdAnalyzeVerify: boolean;
   systemdAnalyzeSecurity: boolean;
   journalctl: boolean;
   coredumpctl: boolean;
@@ -411,7 +413,8 @@ Diagnostics
 ├── Boot
 ├── Crashes
 ├── Findings
-└── Security
+├── Security
+└── Verification
 ```
 
 Start smaller in v0.1.
@@ -469,6 +472,14 @@ Show a count of supported current-boot diagnostic findings (OOM kill activity an
 Do not claim the absence of findings means the system is healthy.
 
 Click through to the Findings page.
+
+### Security
+
+Teaser only. Do not run `systemd-analyze security` on Overview.
+
+### Verification
+
+Teaser only. Do not run `systemd-analyze plot` or `systemd-analyze verify` on Overview.
 
 ### Overall summary
 
@@ -538,15 +549,22 @@ Do not interpret the chain as perfectly causal in every case. systemd documents 
 
 ### 12.4 Boot plot
 
-A later milestone may expose `systemd-analyze plot`.
+v0.5 (verified against systemd 255):
 
-Prefer the tool's own SVG/raw timing output instead of reimplementing its timing calculations.
+Use `systemd-analyze --system --no-pager plot`. Canonical stdout is SVG. `--json=` / `--table` emit raw timing tables, not the chart; do **not** reconstruct bars from JSON. `--system` / `--user` exist; this plugin is system-only. Firmware, loader, kernel, and initrd bars appear in systemd's SVG when those timestamps exist.
 
-Security requirement:
+This is an additional visualization on the Boot page. `time`, `blame`, and `critical-chain` remain authoritative for durations.
 
-- do not inject unsanitized arbitrary SVG into the DOM
-- use an appropriate safe rendering strategy
-- treat generated markup as untrusted input even though it came from the local host
+The plot is generated once per Boot page load or Refresh. Do not poll. Do not persist historical plots. Timeout: 60 s. Size cap: 8 MiB. Run unprivileged. Hosts not booted with systemd as PID 1 fail this command; the rest of Boot must still work.
+
+SVG security:
+
+- treat plot output as untrusted even though it is locally generated
+- sanitize to an element/attribute allowlist; strip script, foreignObject, iframe, anchors, event handlers, javascript/data hrefs, `@import`, and `url()` in CSS
+- display the sanitized SVG as `image/svg+xml` through a blob URL in an `<img>`
+- do not inject SVG with `dangerouslySetInnerHTML` or other raw HTML APIs
+
+SVG as an image cannot run script or navigate the Cockpit origin. Sanitization is defense in depth.
 
 ### 12.5 Historical boot comparison
 
@@ -693,25 +711,23 @@ A future feature may generate suggested drop-in content, but that must be separa
 
 ## 17. Unit verification
 
-Future milestone.
+v0.5 (verified against systemd 255):
 
-`systemd-analyze verify` can be useful for:
+`systemd-analyze verify FILE...` accepts installed unit names as well as filesystem paths. This plugin verifies **installed system unit names only**, selected from D-Bus `ListUnitFiles` (fallback: `systemctl --system --no-pager --no-legend --full --plain list-unit-files`). Do not accept arbitrary filesystem paths, `:alias` syntax, or leading `-`. Pass the unit name as its own argv entry:
 
-- unit file syntax
-- missing dependencies
-- invalid directives
-- related verification warnings
+```text
+systemd-analyze --system --no-pager --man=no verify UNIT
+```
 
-Do not blindly run verification across arbitrary filesystem content.
+`--man=no` skips Documentation= man-page existence checks (faster, less noise). Do not pass `--generators` (requires privileges). Do not use `--user`. There is no JSON/table mode.
 
-Potential UI:
+Findings are text, usually on stderr. Collect stderr with `err: "out"`. Default (no `--recursive-errors`) **exits 0 even when warnings exist**; missing dependencies or hard load failures can still exit 1. Do **not** treat exit status as the finding list. A missing unit prints `Unit NAME not found.` and may still exit 0.
 
-- select an installed unit
-- run verification
-- show structured warnings/errors
-- link back to Services
+Related units are also loaded. Verifying `ok.service` that Requires `warn.service` can print warnings for `warn.service`. The UI must label those as related-unit findings, not as "Error in ok.service".
 
-No editing in initial implementation.
+Do not edit units, write drop-ins, daemon-reload, start/stop/enable/disable, or auto-repair. View Service links to Cockpit Services.
+
+Run unprivileged. If a protected path later needs privilege, request it only for that operation and explain the limitation. Do not auto-escalate every verification.
 
 ---
 
@@ -929,9 +945,10 @@ Add:
 
 Add:
 
-- safe boot plot rendering
-- optional unit verification
-- improved critical-chain visualization
+- safe boot plot rendering from `systemd-analyze plot` SVG
+- optional unit verification from `systemd-analyze verify`
+
+v0.5 as implemented does **not** redesign the critical-chain tree. The milestone request was plot + verify only; critical-chain remains the v0.1 nested tree.
 
 ### v1.0 — Stability/polish
 

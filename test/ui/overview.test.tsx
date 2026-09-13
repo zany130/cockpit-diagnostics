@@ -28,6 +28,15 @@ const { loadSecuritySummaries } = vi.hoisted(() => ({
     loadSecuritySummaries: vi.fn(),
 }));
 
+const { loadBootPlot } = vi.hoisted(() => ({
+    loadBootPlot: vi.fn(),
+}));
+
+const { loadInstalledUnitFiles, verifyUnit } = vi.hoisted(() => ({
+    loadInstalledUnitFiles: vi.fn(),
+    verifyUnit: vi.fn(),
+}));
+
 vi.mock("../../src/providers/systemdAnalyze", () => ({
     loadBootSummary,
     loadCriticalChain,
@@ -51,12 +60,23 @@ vi.mock("../../src/providers/security", () => ({
     loadSecurityDetails: vi.fn(),
 }));
 
+vi.mock("../../src/providers/plot", () => ({
+    loadBootPlot,
+}));
+
+vi.mock("../../src/providers/verify", () => ({
+    loadInstalledUnitFiles,
+    verifyUnit,
+}));
+
 const capabilities: DiagnosticCapabilities = {
     systemdAnalyze: true,
     systemdAnalyzeTime: true,
     systemdAnalyzeBlame: true,
     systemdAnalyzeCriticalChain: true,
     systemdAnalyzeSecurity: true,
+    systemdAnalyzePlot: true,
+    systemdAnalyzeVerify: true,
     systemctl: true,
     systemdVersion: 255,
     coredumpctl: true,
@@ -98,6 +118,9 @@ describe("OverviewPage", () => {
         loadFailedUnits.mockResolvedValue(failed);
         loadCoredumps.mockResolvedValue([]);
         loadFindings.mockResolvedValue({ findings: [], truncated: false, incomplete: false });
+        loadBootPlot.mockReset();
+        loadInstalledUnitFiles.mockReset();
+        verifyUnit.mockReset();
     });
 
     it("renders boot facts and failed units without a health score", async () => {
@@ -117,7 +140,12 @@ describe("OverviewPage", () => {
         expect(screen.getByText("Security")).toBeInTheDocument();
         expect(screen.getByText("systemd hardening analysis available")).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Review services" })).toBeInTheDocument();
+        expect(screen.getByText("Verification")).toBeInTheDocument();
+        expect(screen.getByText("Unit file verification available")).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Verify a unit" })).toBeInTheDocument();
         expect(loadSecuritySummaries).not.toHaveBeenCalled();
+        expect(loadBootPlot).not.toHaveBeenCalled();
+        expect(verifyUnit).not.toHaveBeenCalled();
         expect(screen.queryByText(/vulnerability score/i)).not.toBeInTheDocument();
         expect(screen.queryByText(/system security score/i)).not.toBeInTheDocument();
     });
@@ -140,6 +168,8 @@ describe("OverviewPage", () => {
         expect(loadCoredumps).toHaveBeenCalledTimes(2);
         expect(loadFindings).toHaveBeenCalledTimes(2);
         expect(loadSecuritySummaries).not.toHaveBeenCalled();
+        expect(loadBootPlot).not.toHaveBeenCalled();
+        expect(verifyUnit).not.toHaveBeenCalled();
     });
 
     it("keeps failed units visible when boot timing fails", async () => {
@@ -300,5 +330,35 @@ describe("OverviewPage", () => {
         expect(await screen.findByRole("button", { name: "No supported findings this boot" })).toBeInTheDocument();
         expect(screen.getByText(/systemd-analyze security is not available/)).toBeInTheDocument();
         expect(loadSecuritySummaries).not.toHaveBeenCalled();
+    });
+
+    it("opens the Verification page from the teaser without verifying a unit on Overview", async () => {
+        const user = userEvent.setup();
+        render(<OverviewPage capabilities={capabilities} onRefresh={() => undefined} />);
+        expect(await screen.findByText("Unit file verification available")).toBeInTheDocument();
+        expect(verifyUnit).not.toHaveBeenCalled();
+        expect(loadInstalledUnitFiles).not.toHaveBeenCalled();
+        expect(loadBootPlot).not.toHaveBeenCalled();
+        await user.click(screen.getByRole("button", { name: "Verify a unit" }));
+        expect(cockpit.location.path).toEqual(["verification"]);
+        expect(verifyUnit).not.toHaveBeenCalled();
+        expect(loadBootPlot).not.toHaveBeenCalled();
+    });
+
+    it("keeps Boot, Crashes, Findings, and Security visible when verification is unavailable", async () => {
+        render(
+            <OverviewPage
+                capabilities={{ ...capabilities, systemdAnalyzeVerify: false }}
+                onRefresh={() => undefined}
+            />
+        );
+        expect(await screen.findByText("Boot completed in 1 min 9.608 s")).toBeInTheDocument();
+        expect(await screen.findByText("foo.service")).toBeInTheDocument();
+        expect(await screen.findByRole("button", { name: "No coredumps this boot" })).toBeInTheDocument();
+        expect(await screen.findByRole("button", { name: "No supported findings this boot" })).toBeInTheDocument();
+        expect(screen.getByText("systemd hardening analysis available")).toBeInTheDocument();
+        expect(screen.getByText(/systemd-analyze verify is not available/)).toBeInTheDocument();
+        expect(verifyUnit).not.toHaveBeenCalled();
+        expect(loadBootPlot).not.toHaveBeenCalled();
     });
 });

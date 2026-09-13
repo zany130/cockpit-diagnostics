@@ -100,6 +100,9 @@ export const OverviewPage = ({ capabilities, onRefresh, lastRefreshed }: {
                 <GridItem md={6} xl={4}>
                     <SecurityOverviewCard capabilities={capabilities} />
                 </GridItem>
+                <GridItem md={6} xl={4}>
+                    <VerificationOverviewCard capabilities={capabilities} />
+                </GridItem>
             </Grid>
         </PageSection>
     );
@@ -416,6 +419,45 @@ const SecurityOverviewCard = ({
         </CardBody>
         <CardFooter>
             <Button variant="link" isInline onClick={() => goToPage("security")}>{_("Review services")}</Button>
+        </CardFooter>
+    </Card>
+);
+
+const VerificationOverviewCard = ({
+    capabilities,
+}: {
+    capabilities: DiagnosticCapabilities;
+}) => (
+    <Card isCompact>
+        <CardHeader>
+            <CardTitle>
+                <Title headingLevel="h3" size="md">{_("Verification")}</Title>
+            </CardTitle>
+        </CardHeader>
+        <CardBody>
+            {!capabilities.systemdAnalyze || !capabilities.systemdAnalyzeVerify
+                ? (
+                    <CapabilityNotice>
+                        {_("systemd-analyze verify is not available, so unit files cannot be checked here.")}
+                    </CapabilityNotice>
+                )
+                : (
+                    <>
+                        <Content component="p" className="diagnostics-overview-lead">
+                            <Button variant="link" isInline onClick={() => goToPage("verification")}>
+                                {_("Unit file verification available")}
+                            </Button>
+                        </Content>
+                        <HelperText>
+                            <HelperTextItem>
+                                {_("Runs systemd-analyze verify on an installed system unit. This is not a unit editor.")}
+                            </HelperTextItem>
+                        </HelperText>
+                    </>
+                )}
+        </CardBody>
+        <CardFooter>
+            <Button variant="link" isInline onClick={() => goToPage("verification")}>{_("Verify a unit")}</Button>
         </CardFooter>
     </Card>
 );

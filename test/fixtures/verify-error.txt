@@ -1,0 +1,3 @@
+/tmp/verify-unit/demo.service:3: Unknown key name 'WhatIsThis' in section 'Unit', ignoring.
+/tmp/verify-unit/demo.service:8: Unknown key name 'MysteryKey' in section 'Service', ignoring.
+demo.service: Failed to create demo.service/start: Unit missing-dep.service not found.

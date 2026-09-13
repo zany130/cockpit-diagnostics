@@ -20,11 +20,13 @@ import cockpit from "cockpit";
 import { flattenCriticalChain, type BootSummary, type CriticalChainNode, type CriticalPathMark, type UnitActivationTiming } from "../types/boot";
 import type { DiagnosticCapabilities } from "../types/diagnostics";
 import { loadBlame, loadBootSummary, loadCriticalChain } from "../providers/systemdAnalyze";
+import { loadBootPlot } from "../providers/plot";
 import { formatDuration } from "../utils/duration";
 import { AsyncState } from "../components/AsyncState";
 import { CapabilityNotice } from "../components/CapabilityNotice";
 import { DurationText } from "../components/DurationText";
 import { PageHeader } from "../components/PageHeader";
+import { BootPlotCard } from "../components/BootPlotCard";
 import { UnitLink } from "../components/UnitLink";
 import { useAsyncProvider } from "../app/useAsyncProvider";
 
@@ -40,11 +42,13 @@ export const BootPage = ({ capabilities, onRefresh, lastRefreshed }: {
     const time = useAsyncProvider(loadBootSummary, capabilities.systemdAnalyze && capabilities.systemdAnalyzeTime);
     const blame = useAsyncProvider(loadBlame, capabilities.systemdAnalyze && capabilities.systemdAnalyzeBlame);
     const chain = useAsyncProvider(loadCriticalChain, capabilities.systemdAnalyze && capabilities.systemdAnalyzeCriticalChain);
+    const plot = useAsyncProvider(loadBootPlot, capabilities.systemdAnalyze && capabilities.systemdAnalyzePlot);
 
     const refreshAll = () => {
         time.reload();
         blame.reload();
         chain.reload();
+        plot.reload();
         onRefresh();
     };
 
@@ -77,6 +81,7 @@ export const BootPage = ({ capabilities, onRefresh, lastRefreshed }: {
 
             <div className="diagnostics-stack">
                 <BootTimingCard capabilities={capabilities} state={time} />
+                <BootPlotCard capabilities={capabilities} state={plot} />
                 <BlameCard capabilities={capabilities} blame={blame} chain={chain} />
                 <CriticalChainCard capabilities={capabilities} state={chain} />
             </div>

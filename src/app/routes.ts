@@ -1,6 +1,6 @@
 import cockpit from "cockpit";
 
-export type DiagnosticsPage = "overview" | "boot" | "crashes" | "findings" | "security";
+export type DiagnosticsPage = "overview" | "boot" | "crashes" | "findings" | "security" | "verification";
 
 export function pageFromPath(path: string[]): DiagnosticsPage {
     if (path[0] === "boot")
@@ -11,6 +11,8 @@ export function pageFromPath(path: string[]): DiagnosticsPage {
         return "findings";
     if (path[0] === "security")
         return "security";
+    if (path[0] === "verification")
+        return "verification";
     return "overview";
 }
 

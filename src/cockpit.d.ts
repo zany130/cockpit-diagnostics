@@ -12,7 +12,10 @@ declare module "cockpit" {
             environ?: string[];
             superuser?: "require" | "try" | null;
             directory?: string;
-        }): Promise<string> & { close(problem?: string): void };
+        }): Promise<string> & {
+            close(problem?: string): void;
+            stream?(callback: (data: string) => void): unknown;
+        };
         dbus(name: string, options?: { bus?: string }): {
             call(path: string, iface: string, method: string, args?: unknown[]): Promise<unknown[]>;
             close(): void;

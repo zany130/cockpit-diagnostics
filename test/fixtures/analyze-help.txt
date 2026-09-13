@@ -10,6 +10,7 @@ Commands:
                              of units
   plot                       Output SVG graphic showing service
                              initialization
+  verify FILE...             Check unit files for correctness
   security [UNIT...]         Analyze security of unit
 
      --json=pretty|short|off Generate JSON output of the security

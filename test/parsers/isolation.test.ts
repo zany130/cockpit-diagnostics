@@ -7,6 +7,8 @@ import { parseFailedUnits } from "../../src/parsers/failedUnits";
 import { parseCoredumpList } from "../../src/parsers/coredumps";
 import { parseJournalOutput } from "../../src/parsers/journal";
 import { parseSecuritySummaries } from "../../src/parsers/security";
+import { parseBootPlotSvg } from "../../src/parsers/plot";
+import { parseVerifyOutput } from "../../src/parsers/verify";
 import { detectKernelFindings } from "../../src/detectors/kernel";
 import { detectOomFindings } from "../../src/detectors/oom";
 import { fixture } from "../readFixture";
@@ -31,5 +33,14 @@ describe("provider isolation at the data layer", () => {
         const summaries = parseSecuritySummaries(fixture("security-list-normal.txt"));
         expect(summaries).toHaveLength(4);
         expect(summaries[0]?.unit).toBe("systemd-journald.service");
+
+        expect(() => parseBootPlotSvg(fixture("plot-invalid.txt"))).toThrow();
+        const plot = parseBootPlotSvg(fixture("plot-normal.txt"));
+        expect(plot.svg).toContain("foo.service");
+
+        const clean = parseVerifyOutput("", "apt-daily.service");
+        expect(clean.findings).toEqual([]);
+        const warning = parseVerifyOutput(fixture("verify-warning.txt"), "warn.service");
+        expect(warning.findings[0]?.severity).toBe("warning");
     });
 });

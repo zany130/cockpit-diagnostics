@@ -3,16 +3,18 @@
   <id>org.cockpit_project.diagnostics</id>
   <metadata_license>CC0-1.0</metadata_license>
   <name>Diagnostics</name>
-  <summary>systemd boot, unit, crash, findings, and service hardening for Cockpit</summary>
+  <summary>systemd boot, unit, crash, findings, service hardening, and unit verification for Cockpit</summary>
   <description>
     <p>
-      Shows current-boot timing, unit activation duration, the systemd
-      critical chain, currently failed units, coredumps, conservative
-      current-boot findings such as out-of-memory kills and high-priority
-      kernel events, and systemd-analyze security exposure for system
-      services. It links to Cockpit Services and Logs instead of
-      duplicating those pages. The security page reports sandboxing
-      settings; it is not a vulnerability scanner.
+      Shows current-boot timing, systemd-analyze plot, unit activation
+      duration, the systemd critical chain, currently failed units,
+      coredumps, conservative current-boot findings such as out-of-memory
+      kills and high-priority kernel events, systemd-analyze security
+      exposure for system services, and systemd-analyze verify findings
+      for installed unit files. It links to Cockpit Services and Logs
+      instead of duplicating those pages. The security page reports
+      sandboxing settings; it is not a vulnerability scanner. Verification
+      does not edit units.
     </p>
   </description>
   <extends>org.cockpit_project.cockpit</extends>

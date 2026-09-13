@@ -40,16 +40,21 @@ describe("detectCapabilities", () => {
             systemdAnalyzeBlame: true,
             systemdAnalyzeCriticalChain: true,
             systemdAnalyzeSecurity: true,
+            systemdAnalyzePlot: true,
+            systemdAnalyzeVerify: true,
             systemctl: true,
             coredumpctl: true,
             journalctl: true,
             systemdVersion: 255,
         });
-        expect(caps).not.toHaveProperty("systemdAnalyzePlot");
 
         const commands = vi.mocked(cockpit.spawn).mock.calls.map(call => call[0][0]);
         expect(commands).toEqual(expect.arrayContaining(["systemd-analyze", "systemctl", "coredumpctl", "journalctl"]));
-        expect(commands).not.toContain("systemd-analyze plot");
+        for (const call of vi.mocked(cockpit.spawn).mock.calls) {
+            expect(call[0].includes("plot")).toBe(false);
+            expect(call[0].includes("verify")).toBe(false);
+            expect(call[0].includes("security")).toBe(false);
+        }
 
         for (const call of vi.mocked(cockpit.spawn).mock.calls) {
             expect(call[0]).toContain("--no-pager");
@@ -67,6 +72,8 @@ describe("detectCapabilities", () => {
         const caps = await detectCapabilities();
         expect(caps.systemdAnalyze).toBe(false);
         expect(caps.systemdAnalyzeSecurity).toBe(false);
+        expect(caps.systemdAnalyzePlot).toBe(false);
+        expect(caps.systemdAnalyzeVerify).toBe(false);
         expect(caps.systemctl).toBe(true);
         expect(caps.coredumpctl).toBe(false);
         expect(caps.journalctl).toBe(false);

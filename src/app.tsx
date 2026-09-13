@@ -15,6 +15,7 @@ import { CrashesPage } from "./pages/CrashesPage";
 import { FindingsPage } from "./pages/FindingsPage";
 import { OverviewPage } from "./pages/OverviewPage";
 import { SecurityPage } from "./pages/SecurityPage";
+import { VerificationPage } from "./pages/VerificationPage";
 
 const _ = cockpit.gettext;
 
@@ -106,6 +107,16 @@ export const Application = () => {
                         >
                             {_("Security")}
                         </NavItem>
+                        <NavItem
+                            to="#/verification"
+                            isActive={page === "verification"}
+                            onClick={event => {
+                                event.preventDefault();
+                                goToPage("verification");
+                            }}
+                        >
+                            {_("Verification")}
+                        </NavItem>
                     </NavList>
                 </Nav>
             </PageSection>
@@ -154,6 +165,13 @@ export const Application = () => {
             )}
             {capabilities && page === "security" && (
                 <SecurityPage
+                    capabilities={capabilities}
+                    onRefresh={markRefreshed}
+                    lastRefreshed={lastRefreshed}
+                />
+            )}
+            {capabilities && page === "verification" && (
+                <VerificationPage
                     capabilities={capabilities}
                     onRefresh={markRefreshed}
                     lastRefreshed={lastRefreshed}

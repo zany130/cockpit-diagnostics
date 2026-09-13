@@ -1,0 +1,5 @@
+apt-daily.service                            static   -
+console-getty.service                        disabled disabled
+getty@.service                               enabled  enabled
+foo.service                                  enabled  enabled
+user.slice                                   static   -

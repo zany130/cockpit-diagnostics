@@ -7,10 +7,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BootPage } from "../../src/pages/BootPage";
 import type { DiagnosticCapabilities } from "../../src/types/diagnostics";
 
-const { loadBootSummary, loadBlame, loadCriticalChain } = vi.hoisted(() => ({
+const { loadBootSummary, loadBlame, loadCriticalChain, loadBootPlot } = vi.hoisted(() => ({
     loadBootSummary: vi.fn(),
     loadBlame: vi.fn(),
     loadCriticalChain: vi.fn(),
+    loadBootPlot: vi.fn(),
 }));
 
 vi.mock("../../src/providers/systemdAnalyze", () => ({
@@ -19,12 +20,18 @@ vi.mock("../../src/providers/systemdAnalyze", () => ({
     loadCriticalChain,
 }));
 
+vi.mock("../../src/providers/plot", () => ({
+    loadBootPlot,
+}));
+
 const capabilities: DiagnosticCapabilities = {
     systemdAnalyze: true,
     systemdAnalyzeTime: true,
     systemdAnalyzeBlame: true,
     systemdAnalyzeCriticalChain: true,
     systemdAnalyzeSecurity: false,
+    systemdAnalyzePlot: true,
+    systemdAnalyzeVerify: false,
     systemctl: true,
     coredumpctl: false,
     journalctl: false,
@@ -35,6 +42,7 @@ describe("BootPage", () => {
         loadBootSummary.mockReset();
         loadBlame.mockReset();
         loadCriticalChain.mockReset();
+        loadBootPlot.mockReset();
         loadBootSummary.mockResolvedValue({
             kernelUs: 2_584_000,
             userspaceUs: 47_847_000,
@@ -60,6 +68,11 @@ describe("BootPage", () => {
                 ],
             },
         ]);
+        loadBootPlot.mockResolvedValue({
+            svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"800\" height=\"160\"><text>foo.service</text></svg>",
+            width: 800,
+            height: 160,
+        });
     });
 
     it("separates total boot timing, activation duration, and the critical path", async () => {
@@ -69,6 +82,10 @@ describe("BootPage", () => {
         expect(screen.getByText("Total boot time")).toBeInTheDocument();
         expect(screen.getByText("Unit activation duration")).toBeInTheDocument();
         expect(screen.getByText("Critical boot path")).toBeInTheDocument();
+        expect(screen.getByText("Boot timeline")).toBeInTheDocument();
+        expect(await screen.findByRole("img", { name: "systemd boot timeline" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Fit to width" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Reset zoom" })).toBeInTheDocument();
         expect(screen.getByText("Activation time is not the same as boot delay")).toBeInTheDocument();
         expect(screen.getByText(/slowest unit here did not necessarily delay boot/)).toBeInTheDocument();
         expect(screen.getByText(/estimate, not a complete causal proof/)).toBeInTheDocument();
@@ -120,5 +137,58 @@ describe("BootPage", () => {
         expect(screen.queryByText(/Total boot timing is how long firmware/)).not.toBeInTheDocument();
         await user.click(screen.getByRole("button", { name: "About these views" }));
         expect(await screen.findByText(/Total boot timing is how long firmware/)).toBeInTheDocument();
+    });
+
+    it("shows a loading state for the boot timeline", () => {
+        loadBootPlot.mockReturnValue(new Promise(() => undefined));
+        render(<BootPage capabilities={capabilities} onRefresh={() => undefined} />);
+        expect(screen.getByText("Loading boot timeline")).toBeInTheDocument();
+    });
+
+    it("explains when plot is unavailable without hiding boot timing", async () => {
+        render(
+            <BootPage
+                capabilities={{ ...capabilities, systemdAnalyzePlot: false }}
+                onRefresh={() => undefined}
+            />
+        );
+        expect(screen.getByText(/systemd-analyze plot is not available/)).toBeInTheDocument();
+        expect(await screen.findByText("firewalld.service")).toBeInTheDocument();
+        expect(screen.getByText("Total boot timing")).toBeInTheDocument();
+        expect(loadBootPlot).not.toHaveBeenCalled();
+        expect(screen.queryByRole("img", { name: "systemd boot timeline" })).not.toBeInTheDocument();
+    });
+
+    it("keeps timing and blame when the plot provider fails", async () => {
+        loadBootPlot.mockRejectedValue({
+            problem: "",
+            message: "Failed to connect to bus: Host is down",
+            exit_status: 1,
+        });
+        render(<BootPage capabilities={capabilities} onRefresh={() => undefined} />);
+        expect(await screen.findByText("firewalld.service")).toBeInTheDocument();
+        expect(screen.getByText("Total boot timing")).toBeInTheDocument();
+        expect(screen.getByText("Command failed")).toBeInTheDocument();
+        expect(screen.queryByRole("img", { name: "systemd boot timeline" })).not.toBeInTheDocument();
+    });
+
+    it("renders the timeline in a horizontally constrained frame", async () => {
+        render(<BootPage capabilities={capabilities} onRefresh={() => undefined} />);
+        await screen.findByRole("img", { name: "systemd boot timeline" });
+        expect(document.querySelector(".diagnostics-boot-plot-frame")).toBeTruthy();
+        const img = screen.getByRole("img", { name: "systemd boot timeline" });
+        expect(img).toHaveAttribute("src", "blob:diagnostics-boot-plot");
+    });
+
+    it("regenerates the plot only on refresh", async () => {
+        const user = userEvent.setup();
+        const onRefresh = vi.fn();
+        render(<BootPage capabilities={capabilities} onRefresh={onRefresh} />);
+        await screen.findByRole("img", { name: "systemd boot timeline" });
+        expect(loadBootPlot).toHaveBeenCalledTimes(1);
+        await user.click(screen.getByRole("button", { name: "Refresh" }));
+        expect(onRefresh).toHaveBeenCalled();
+        expect(loadBootPlot).toHaveBeenCalledTimes(2);
+        expect(loadBootSummary).toHaveBeenCalledTimes(2);
     });
 });
