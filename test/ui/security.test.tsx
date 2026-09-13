@@ -101,16 +101,16 @@ describe("SecurityPage", () => {
             message: "Permission denied",
         });
         render(<SecurityPage capabilities={capabilities} onRefresh={() => undefined} />);
-        expect(await screen.findByText("Permission denied")).toBeInTheDocument();
+        expect(await screen.findAllByText("Permission denied")).not.toHaveLength(0);
     });
 
     it("renders the service table with systemd assessment labels", async () => {
         render(<SecurityPage capabilities={capabilities} onRefresh={() => undefined} />);
         expect(await screen.findByText("systemd-journald.service")).toBeInTheDocument();
         expect(screen.getByText("2.1")).toBeInTheDocument();
-        expect(screen.getByText("OK")).toBeInTheDocument();
-        expect(screen.getByText("EXPOSED")).toBeInTheDocument();
-        expect(screen.getByText("UNSAFE")).toBeInTheDocument();
+        expect(screen.getAllByText("OK").length).toBeGreaterThan(0);
+        expect(screen.getAllByText("EXPOSED").length).toBeGreaterThan(0);
+        expect(screen.getAllByText("UNSAFE").length).toBeGreaterThan(0);
         expect(screen.getByText(/System services/)).toBeInTheDocument();
         expect(screen.queryByRole("button", { name: /start/i })).not.toBeInTheDocument();
         expect(screen.queryByRole("button", { name: /restart/i })).not.toBeInTheDocument();

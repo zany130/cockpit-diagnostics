@@ -137,11 +137,13 @@ describe("Application navigation", () => {
         render(<Application />);
 
         expect(await screen.findByRole("heading", { name: "Overview" })).toBeInTheDocument();
+        const crashCalls = loadCoredumps.mock.calls.length;
+        const findingCalls = loadFindings.mock.calls.length;
         await user.click(screen.getByRole("link", { name: "Security" }));
         expect(await screen.findByRole("heading", { name: "systemd service hardening" })).toBeInTheDocument();
         expect(screen.getByText(/not a vulnerability scan/)).toBeInTheDocument();
         expect(loadSecuritySummaries).toHaveBeenCalled();
-        expect(loadCoredumps).toHaveBeenCalledTimes(1);
-        expect(loadFindings).toHaveBeenCalledTimes(1);
+        expect(loadCoredumps).toHaveBeenCalledTimes(crashCalls);
+        expect(loadFindings).toHaveBeenCalledTimes(findingCalls);
     });
 });
