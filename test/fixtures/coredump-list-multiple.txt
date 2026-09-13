@@ -1,0 +1,5 @@
+[
+  {"time":1757678401000000,"pid":6654,"uid":1000,"gid":1000,"sig":11,"corefile":"present","exe":"/usr/bin/bash","size":52940},
+  {"time":1757678502000000,"pid":8018,"uid":0,"gid":0,"sig":6,"corefile":"missing","exe":"/usr/sbin/nginx","size":null},
+  {"time":1757678603000000,"pid":219544,"uid":1000,"gid":1000,"sig":9,"corefile":"journal","exe":"/usr/bin/python3","size":1048576}
+]

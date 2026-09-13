@@ -1,9 +1,13 @@
 import cockpit from "cockpit";
 
-export type DiagnosticsPage = "overview" | "boot";
+export type DiagnosticsPage = "overview" | "boot" | "crashes";
 
 export function pageFromPath(path: string[]): DiagnosticsPage {
-    return path[0] === "boot" ? "boot" : "overview";
+    if (path[0] === "boot")
+        return "boot";
+    if (path[0] === "crashes")
+        return "crashes";
+    return "overview";
 }
 
 export function pathFromLocation(): string[] {

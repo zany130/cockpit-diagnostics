@@ -1,0 +1,7 @@
+           PID: 8018 (nginx)
+           UID: 0 (root)
+           GID: 0 (root)
+        Signal: 6 (ABRT)
+          Unit: nginx.service
+       Boot ID: 6580ca3716f24ca8981f1528242512c4
+       Storage: /var/lib/systemd/coredump/core.nginx.0.abcdef.zst (missing)

@@ -15,9 +15,11 @@ import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import cockpit from "cockpit";
 
 import type { BootSummary } from "../types/boot";
+import type { CoredumpEntry } from "../types/crashes";
 import type { DiagnosticCapabilities, FailedUnit } from "../types/diagnostics";
 import { loadBootSummary, loadCriticalChain } from "../providers/systemdAnalyze";
 import { loadFailedUnits } from "../providers/systemdUnits";
+import { loadCoredumps } from "../providers/coredumps";
 import { formatDuration } from "../utils/duration";
 import { jumpToServices } from "../utils/cockpitLinks";
 import { goToPage } from "../app/routes";
@@ -38,11 +40,13 @@ export const OverviewPage = ({ capabilities, onRefresh, lastRefreshed }: {
     const boot = useAsyncProvider(loadBootSummary, capabilities.systemdAnalyze && capabilities.systemdAnalyzeTime);
     const chain = useAsyncProvider(loadCriticalChain, capabilities.systemdAnalyze && capabilities.systemdAnalyzeCriticalChain);
     const failed = useAsyncProvider(loadFailedUnits, capabilities.systemctl);
+    const crashes = useAsyncProvider(loadCoredumps, capabilities.coredumpctl);
 
     const refreshAll = () => {
         boot.reload();
         chain.reload();
         failed.reload();
+        crashes.reload();
         onRefresh();
     };
 
@@ -72,7 +76,7 @@ export const OverviewPage = ({ capabilities, onRefresh, lastRefreshed }: {
             )}
 
             <Grid hasGutter className="diagnostics-grid">
-                <GridItem md={6}>
+                <GridItem md={6} xl={4}>
                     <BootOverviewCard
                         capabilities={capabilities}
                         boot={boot}
@@ -80,8 +84,11 @@ export const OverviewPage = ({ capabilities, onRefresh, lastRefreshed }: {
                         chainStatus={chain.status}
                     />
                 </GridItem>
-                <GridItem md={6}>
+                <GridItem md={6} xl={4}>
                     <FailedUnitsCard capabilities={capabilities} failed={failed} failedCount={failedCount} />
+                </GridItem>
+                <GridItem md={6} xl={4}>
+                    <CrashesOverviewCard capabilities={capabilities} crashes={crashes} />
                 </GridItem>
             </Grid>
         </PageSection>
@@ -217,6 +224,69 @@ const FailedUnitsCard = ({
             </CardBody>
             <CardFooter>
                 <Button variant="link" isInline onClick={() => jumpToServices()}>{_("Open Cockpit Services")}</Button>
+            </CardFooter>
+        </Card>
+    );
+};
+
+const CrashesOverviewCard = ({
+    capabilities,
+    crashes,
+}: {
+    capabilities: DiagnosticCapabilities;
+    crashes: ReturnType<typeof useAsyncProvider<CoredumpEntry[]>>;
+}) => {
+    const count = crashes.status === "ready" ? (crashes.data?.length ?? 0) : 0;
+    const summary = crashes.status === "ready"
+        ? (
+            count === 0
+                ? _("No coredumps this boot")
+                : cockpit.format(
+                    cockpit.ngettext("$0 coredump this boot", "$0 coredumps this boot", count),
+                    count
+                )
+        )
+        : undefined;
+
+    return (
+        <Card isCompact>
+            <CardHeader>
+                <CardTitle>
+                    <Title headingLevel="h3" size="md">{_("Crashes")}</Title>
+                </CardTitle>
+            </CardHeader>
+            <CardBody>
+                {!capabilities.coredumpctl
+                    ? (
+                        <CapabilityNotice>
+                            {_("coredumpctl is not available, so coredumps cannot be summarized.")}
+                        </CapabilityNotice>
+                    )
+                    : (
+                        <AsyncState
+                            status={crashes.status}
+                            error={crashes.error}
+                            loadingLabel={_("Loading coredumps")}
+                        >
+                            {summary && (
+                                <>
+                                    <Content component="p" className="diagnostics-overview-lead">
+                                        <Button variant="link" isInline onClick={() => goToPage("crashes")}>
+                                            {summary}
+                                        </Button>
+                                    </Content>
+                                    <HelperText>
+                                        <HelperTextItem>
+                                            {_("Coredumps are crash records from this boot. They do not automatically mean the system is unhealthy.")}
+                                        </HelperTextItem>
+                                    </HelperText>
+                                </>
+                            )}
+                        </AsyncState>
+                    )}
+            </CardBody>
+            <CardFooter>
+                <Button variant="link" isInline onClick={() => goToPage("crashes")}>{_("Open Crashes page")}</Button>
             </CardFooter>
         </Card>
     );

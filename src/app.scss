@@ -53,6 +53,10 @@
     font-weight: var(--pf-t--global--font--weight--heading);
 }
 
+.pf-v6-c-drawer__body {
+    min-width: 0;
+}
+
 .pf-v6-c-page__main-section {
     padding-block-start: var(--pf-t--global--spacer--md);
 }

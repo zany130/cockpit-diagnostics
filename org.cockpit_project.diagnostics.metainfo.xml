@@ -3,12 +3,13 @@
   <id>org.cockpit_project.diagnostics</id>
   <metadata_license>CC0-1.0</metadata_license>
   <name>Diagnostics</name>
-  <summary>systemd boot and unit diagnostics for Cockpit</summary>
+  <summary>systemd boot, unit, and crash diagnostics for Cockpit</summary>
   <description>
     <p>
       Shows current-boot timing, unit activation duration, the systemd
-      critical chain, and currently failed units. It links to Cockpit
-      Services and Logs instead of duplicating those pages.
+      critical chain, currently failed units, and coredumps for the
+      current boot. It links to Cockpit Services and Logs instead of
+      duplicating those pages.
     </p>
   </description>
   <extends>org.cockpit_project.cockpit</extends>

@@ -52,6 +52,15 @@ describe("normalizeSpawnError", () => {
         expect(error.kind).toBe("permission-denied");
     });
 
+    it("maps coredumpctl journal permission messages", () => {
+        const error = normalizeSpawnError({
+            problem: null,
+            exit_status: 1,
+            message: "No journal files were opened due to insufficient permissions.",
+        });
+        expect(error.kind).toBe("permission-denied");
+    });
+
     it("maps timeouts", () => {
         const error = normalizeSpawnError({ problem: "timeout", message: "terminated" });
         expect(error.kind).toBe("timeout");

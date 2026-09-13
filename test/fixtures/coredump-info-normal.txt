@@ -1,0 +1,18 @@
+           PID: 6654 (bash)
+           UID: 1000 (user)
+           GID: 1000 (user)
+        Signal: 11 (SEGV)
+     Timestamp: Sat 2026-09-12 12:00:01 UTC (20s ago)
+  Command Line: /usr/bin/bash -c 'kill -SEGV $$'
+    Executable: /usr/bin/bash
+ Control Group: /user.slice/user-1000.slice/session-1.scope
+          Unit: user@1000.service
+     User Unit: vte-spawn-example.scope
+         Slice: user-1000.slice
+     Owner UID: 1000 (user)
+       Boot ID: 6580ca3716f24ca8981f1528242512c4
+    Machine ID: abcdefabcdefabcdefabcdefabcdefab
+      Hostname: testhost
+       Storage: /var/lib/systemd/coredump/core.bash.1000.abcdef.zst (present)
+  Size on Disk: 51.7K
+       Message: Process 6654 (bash) of user 1000 dumped core.

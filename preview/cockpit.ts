@@ -6,6 +6,10 @@ import blameOutput from "../test/fixtures/blame-minutes.txt";
 import chainOutput from "../test/fixtures/critical-chain-normal.txt";
 import failedPlain from "../test/fixtures/failed-units-plain.txt";
 import unitShow from "../test/fixtures/unit-show-normal.txt";
+import bootId from "../test/fixtures/boot-id.txt";
+import coredumpList from "../test/fixtures/coredump-list-multiple.txt";
+import coredumpInfo from "../test/fixtures/coredump-info-normal.txt";
+import coredumpInfoNginx from "../test/fixtures/coredump-info-core-missing.txt";
 
 function ok(data: string) {
     return Object.assign(Promise.resolve(data), {
@@ -96,6 +100,18 @@ const cockpit = {
             if (args.includes("show"))
                 return ok(unitShow);
             return fail("not-found", argv + ": not found");
+        }
+        if (args[0] === "cat" && args[1] === "/proc/sys/kernel/random/boot_id")
+            return ok(bootId);
+        if (args[0] === "coredumpctl") {
+            if (args.includes("--version"))
+                return ok(analyzeVersion);
+            if (args.includes("info")) {
+                if (args.some(arg => arg.includes("8018")))
+                    return ok(coredumpInfoNginx);
+                return ok(coredumpInfo);
+            }
+            return ok(coredumpList);
         }
         return fail("not-found", args[0] + ": not found");
     },

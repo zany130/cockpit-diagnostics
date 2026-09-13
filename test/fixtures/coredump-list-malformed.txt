@@ -1,0 +1,1 @@
+[{"time":1757678401000000,"pid":1,"uid":0,"gid":0,"sig":11,"corefile":"present","exe":"/usr/bin/true","size":1},"not-an-object",{"pid":2,"exe":"/usr/bin/false","corefile":"none"}]

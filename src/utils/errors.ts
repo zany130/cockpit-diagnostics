@@ -51,6 +51,7 @@ function kindFromSpawnFailure(failure: SpawnFailure, message: string): ProviderE
         return "not-supported";
     if (lower.includes("permission denied") ||
             lower.includes("access denied") ||
+            lower.includes("insufficient permissions") ||
             lower.includes("interactive authentication required") ||
             lower.includes("authentication is required") ||
             /\bnot authorized\b/.test(lower) ||

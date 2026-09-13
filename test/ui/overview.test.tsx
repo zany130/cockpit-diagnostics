@@ -7,12 +7,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { OverviewPage } from "../../src/pages/OverviewPage";
 import type { BootSummary } from "../../src/types/boot";
 import type { DiagnosticCapabilities, FailedUnit } from "../../src/types/diagnostics";
+import cockpit from "cockpit";
 
 const { loadBootSummary, loadCriticalChain, loadFailedUnits, loadBlame } = vi.hoisted(() => ({
     loadBootSummary: vi.fn(),
     loadCriticalChain: vi.fn(),
     loadFailedUnits: vi.fn(),
     loadBlame: vi.fn(),
+}));
+
+const { loadCoredumps } = vi.hoisted(() => ({
+    loadCoredumps: vi.fn(),
 }));
 
 vi.mock("../../src/providers/systemdAnalyze", () => ({
@@ -25,6 +30,10 @@ vi.mock("../../src/providers/systemdUnits", () => ({
     loadFailedUnits,
 }));
 
+vi.mock("../../src/providers/coredumps", () => ({
+    loadCoredumps,
+}));
+
 const capabilities: DiagnosticCapabilities = {
     systemdAnalyze: true,
     systemdAnalyzeTime: true,
@@ -32,6 +41,7 @@ const capabilities: DiagnosticCapabilities = {
     systemdAnalyzeCriticalChain: true,
     systemctl: true,
     systemdVersion: 255,
+    coredumpctl: true,
 };
 
 const boot: BootSummary = {
@@ -61,9 +71,11 @@ describe("OverviewPage", () => {
         loadCriticalChain.mockReset();
         loadFailedUnits.mockReset();
         loadBlame.mockReset();
+        loadCoredumps.mockReset();
         loadBootSummary.mockResolvedValue(boot);
         loadCriticalChain.mockResolvedValue([{ unit: "multi-user.target", activatedAtUs: 32_786_000, children: [] }]);
         loadFailedUnits.mockResolvedValue(failed);
+        loadCoredumps.mockResolvedValue([]);
     });
 
     it("renders boot facts and failed units without a health score", async () => {
@@ -97,6 +109,7 @@ describe("OverviewPage", () => {
         expect(onRefresh).toHaveBeenCalled();
         expect(loadBootSummary).toHaveBeenCalledTimes(2);
         expect(loadFailedUnits).toHaveBeenCalledTimes(2);
+        expect(loadCoredumps).toHaveBeenCalledTimes(2);
     });
 
     it("keeps failed units visible when boot timing fails", async () => {
@@ -126,5 +139,42 @@ describe("OverviewPage", () => {
         );
         expect(screen.getByRole("heading", { name: "Overview" })).toBeInTheDocument();
         expect(await screen.findByText(/Last refreshed/)).toBeInTheDocument();
+    });
+
+    it("summarizes zero coredumps without calling them a health problem", async () => {
+        render(<OverviewPage capabilities={capabilities} onRefresh={() => undefined} />);
+        expect(await screen.findByRole("button", { name: "No coredumps this boot" })).toBeInTheDocument();
+        expect(screen.getByText(/do not automatically mean the system is unhealthy/)).toBeInTheDocument();
+        expect(screen.queryByText(/health score/i)).not.toBeInTheDocument();
+    });
+
+    it("summarizes a coredump count and opens the Crashes page", async () => {
+        const user = userEvent.setup();
+        loadCoredumps.mockResolvedValue([
+            { id: "a", pid: 1, executable: "/usr/bin/bash" },
+            { id: "b", pid: 2, executable: "/usr/sbin/nginx" },
+        ]);
+        render(<OverviewPage capabilities={capabilities} onRefresh={() => undefined} />);
+        const summary = await screen.findByRole("button", { name: "2 coredumps this boot" });
+        await user.click(summary);
+        expect(cockpit.location.path).toEqual(["crashes"]);
+    });
+
+    it("keeps Boot visible when the crashes provider fails", async () => {
+        loadCoredumps.mockRejectedValue({ problem: "", message: "Failed to open journal", exit_status: 1 });
+        render(<OverviewPage capabilities={capabilities} onRefresh={() => undefined} />);
+        expect(await screen.findByText("Boot completed in 1 min 9.608 s")).toBeInTheDocument();
+        expect(await screen.findByText("foo.service")).toBeInTheDocument();
+        expect(screen.getByText("Command failed")).toBeInTheDocument();
+    });
+
+    it("explains a missing coredumpctl capability", () => {
+        render(
+            <OverviewPage
+                capabilities={{ ...capabilities, coredumpctl: false }}
+                onRefresh={() => undefined}
+            />
+        );
+        expect(screen.getByText(/coredumpctl is not available/)).toBeInTheDocument();
     });
 });

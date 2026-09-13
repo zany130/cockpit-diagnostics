@@ -32,8 +32,16 @@ const { loadFailedUnits } = vi.hoisted(() => ({
     loadFailedUnits: vi.fn(),
 }));
 
+const { loadCoredumps } = vi.hoisted(() => ({
+    loadCoredumps: vi.fn(),
+}));
+
 vi.mock("../../src/providers/systemdUnits", () => ({
     loadFailedUnits,
+}));
+
+vi.mock("../../src/providers/coredumps", () => ({
+    loadCoredumps,
 }));
 
 const capabilities: DiagnosticCapabilities = {
@@ -42,6 +50,7 @@ const capabilities: DiagnosticCapabilities = {
     systemdAnalyzeBlame: true,
     systemdAnalyzeCriticalChain: true,
     systemctl: true,
+    coredumpctl: true,
 };
 
 describe("Application navigation", () => {
@@ -56,6 +65,7 @@ describe("Application navigation", () => {
         loadBlame.mockResolvedValue([]);
         loadCriticalChain.mockResolvedValue([]);
         loadFailedUnits.mockResolvedValue([]);
+        loadCoredumps.mockResolvedValue([]);
     });
 
     it("switches from Overview to Boot when the Boot nav item is clicked", async () => {
@@ -67,5 +77,15 @@ describe("Application navigation", () => {
         expect(await screen.findByRole("heading", { name: "Boot" })).toBeInTheDocument();
         expect(screen.getByText("Total boot timing")).toBeInTheDocument();
         expect(screen.queryByRole("heading", { name: "Overview" })).not.toBeInTheDocument();
+    });
+
+    it("switches from Overview to Crashes when the Crashes nav item is clicked", async () => {
+        const user = userEvent.setup();
+        render(<Application />);
+
+        expect(await screen.findByRole("heading", { name: "Overview" })).toBeInTheDocument();
+        await user.click(screen.getByRole("link", { name: "Crashes" }));
+        expect(await screen.findByRole("heading", { name: "Crashes" })).toBeInTheDocument();
+        expect(screen.getByText(/crash records, not a health score/)).toBeInTheDocument();
     });
 });

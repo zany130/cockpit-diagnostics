@@ -1,0 +1,9 @@
+           PID: 6654 (bash)
+          Unit: user@1000.service
+    Executable: /usr/bin/bash
+       Storage: /var/lib/systemd/coredump/core.bash.1000.abcdef.zst (present)
+
+           PID: 8018 (nginx)
+          Unit: nginx.service
+    Executable: /usr/sbin/nginx
+       Storage: /var/lib/systemd/coredump/core.nginx.0.abcdef.zst (missing)

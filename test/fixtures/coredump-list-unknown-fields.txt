@@ -1,0 +1,1 @@
+[{"time":1757678401000000,"pid":42,"uid":1000,"gid":1000,"sig":11,"corefile":"truncated","exe":"/usr/bin/true","size":2048,"new_column":"should-be-ignored","package":"coreutils"}]

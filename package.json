@@ -1,6 +1,6 @@
 {
   "name": "diagnostics",
-  "description": "Cockpit application for systemd boot and unit diagnostics",
+  "description": "Cockpit application for systemd boot, unit, and crash diagnostics",
   "type": "module",
   "main": "index.js",
   "repository": "git@github.com:cockpit/cockpit-diagnostics.git",

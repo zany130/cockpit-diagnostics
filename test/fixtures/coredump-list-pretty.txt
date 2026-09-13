@@ -1,0 +1,12 @@
+[
+    {
+        "time": 1757678401000000,
+        "pid": 6654,
+        "uid": 1000,
+        "gid": 1000,
+        "sig": 11,
+        "corefile": "present",
+        "exe": "/usr/bin/bash",
+        "size": 52940
+    }
+]

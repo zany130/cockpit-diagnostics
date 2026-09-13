@@ -9,8 +9,8 @@ describe("routes", () => {
         expect(pageFromPath(["overview"])).toBe("overview");
     });
 
-    it("treats boot as the Boot page", () => {
-        expect(pageFromPath(["boot"])).toBe("boot");
+    it("treats crashes as the Crashes page", () => {
+        expect(pageFromPath(["crashes"])).toBe("crashes");
     });
 
     it("follows cockpit.location and hash updates", () => {
@@ -22,6 +22,9 @@ describe("routes", () => {
         cockpit.location.go(["boot"]);
         expect(cockpit.location.path).toEqual(["boot"]);
         expect(currentPage()).toBe("boot");
+
+        cockpit.location.go(["crashes"]);
+        expect(currentPage()).toBe("crashes");
 
         cockpit.location.go([]);
         expect(currentPage()).toBe("overview");
