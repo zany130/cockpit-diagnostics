@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import cockpit from "cockpit";
 
-import { jumpToService, jumpToServices, jumpToUnitLogs, serviceUnitPath, unitLogsPath } from "../../src/utils/cockpitLinks";
+import { jumpToLogs, jumpToService, jumpToServices, jumpToUnitLogs, literalLogsGrep, logsPath, serviceUnitPath, unitLogsPath } from "../../src/utils/cockpitLinks";
 
 function assertLogsJump(route: string, encodedUnit: string) {
     expect(route).toBe(`/system/logs#?service=${encodedUnit}&start=boot&prio=*`);
@@ -60,5 +60,23 @@ describe("cockpitLinks", () => {
         ]);
         expect(String(jump.mock.calls[1][0])).not.toContain(".html");
         expect(String(jump.mock.calls[1][0])).toContain("prio=*");
+    });
+
+    it("builds documented Logs filters for findings without encoding prio=*", () => {
+        expect(logsPath({ tag: "kernel", start: "boot", prio: "err" }))
+                .toBe("/system/logs#?tag=kernel&start=boot&prio=err");
+        expect(logsPath({ tag: "kernel", start: "boot", prio: "err", grep: "Killed process" }))
+                .toBe("/system/logs#?tag=kernel&grep=Killed%20process&start=boot&prio=err");
+        expect(logsPath({ service: "systemd-oomd.service", start: "boot", prio: "*" }))
+                .toBe("/system/logs#?service=systemd-oomd.service&start=boot&prio=*");
+        expect(logsPath({ start: "boot" })).toContain("prio=*");
+        expect(logsPath({ start: "boot" })).not.toContain("prio=%2A");
+        expect(literalLogsGrep("Killed process")).toBe("Killed process");
+        expect(literalLogsGrep("amdgpu: [gfxhub] page fault")).toBeUndefined();
+        expect(literalLogsGrep("a".repeat(81))).toBeUndefined();
+
+        const jump = vi.spyOn(cockpit, "jump").mockImplementation(() => undefined);
+        jumpToLogs({ tag: "kernel", start: "boot", prio: "err" });
+        expect(jump).toHaveBeenCalledWith("/system/logs#?tag=kernel&start=boot&prio=err");
     });
 });

@@ -4,7 +4,7 @@
 > Target: Cockpit third-party application/plugin  
 > Primary stack: React + TypeScript + PatternFly + documented Cockpit APIs  
 > Initial posture: read-mostly, stateless, no custom daemon  
-> Last technical review: 2026-09-12
+> Last technical review: 2026-09-13
 
 ---
 
@@ -150,7 +150,7 @@ Examples:
 
 - `systemd-analyze` missing -> Boot Analysis unavailable; other pages still work
 - `coredumpctl` missing -> Crashes page shows an informative empty state
-- journal access restricted -> Journal Diagnostics explains the permission limitation
+- journal access restricted -> Findings explains the permission limitation
 - a subcommand unsupported by an older systemd -> hide/disable only that feature
 
 Do not fail the whole application because one command fails.
@@ -202,7 +202,7 @@ cockpit-diagnostics/
 │   │   ├── OverviewPage.tsx
 │   │   ├── BootPage.tsx
 │   │   ├── CrashesPage.tsx
-│   │   ├── JournalPage.tsx
+│   │   ├── FindingsPage.tsx
 │   │   └── SecurityPage.tsx
 │   ├── providers/
 │   │   ├── capabilities.ts
@@ -216,10 +216,15 @@ cockpit-diagnostics/
 │   │   ├── blame.ts
 │   │   ├── criticalChain.ts
 │   │   ├── coredump.ts
+│   │   ├── journal.ts
 │   │   └── security.ts
+│   ├── detectors/
+│   │   ├── oom.ts
+│   │   └── kernel.ts
 │   ├── types/
 │   │   ├── boot.ts
 │   │   ├── diagnostics.ts
+│   │   ├── findings.ts
 │   │   └── providers.ts
 │   └── utils/
 │       ├── duration.ts
@@ -381,11 +386,12 @@ interface FailedUnit {
 
 interface DiagnosticFinding {
   severity: "info" | "warning" | "error";
-  category: "boot" | "unit" | "crash" | "journal" | "kernel" | "memory" | "security";
+  category: "memory" | "kernel";
   title: string;
   summary: string;
-  source: string;
-  evidence?: string[];
+  source: "kernel" | "systemd-oomd";
+  count: number;
+  evidence?: { message?: string };
 }
 ```
 
@@ -402,7 +408,7 @@ Diagnostics
 ├── Overview
 ├── Boot
 ├── Crashes
-├── Journal
+├── Findings
 └── Security
 ```
 
@@ -454,21 +460,13 @@ Show coredump count for the current boot if `coredumpctl` is available.
 
 Do not claim every coredump is a serious system failure.
 
-### Journal
+### Findings
 
-Show counts of recent high-priority events with clearly described scope, e.g.:
+Show a count of supported current-boot diagnostic findings (OOM kill activity and high-priority kernel events).
 
-- current boot
-- journal priorities 0–3
+Do not claim the absence of findings means the system is healthy.
 
-### OOM
-
-Detect OOM events from reliable journal/kernel evidence.
-
-Use careful wording:
-
-- `OOM kill event detected`
-- not `Your system ran out of RAM permanently`
+Click through to the Findings page.
 
 ### Overall summary
 
@@ -617,29 +615,41 @@ Do not delete cores in v0.x.
 
 ---
 
-## 15. Journal Diagnostics page
+## 15. System Findings page
 
-This page is **not** a second general-purpose log browser.
+This page is **not** a journal viewer and must not duplicate Cockpit Logs.
 
-Its purpose is to surface diagnostically important events.
+Cockpit Logs answers: “Show me the journal.”
+Diagnostics Findings answers: “Show me noteworthy diagnostic conditions and link me to the underlying evidence.”
 
-Initial categories:
+v0.3 detectors (current boot only):
 
-- priority 0–3 entries for current boot
-- failed service messages
-- kernel errors
-- OOM events
-- coredump-associated messages
+- conservative out-of-memory kill activity (kernel OOM killer and/or systemd-oomd)
+- high-priority kernel journal events (priorities emerg, alert, crit, err)
 
-Every result should offer `View in Logs` when a stable Cockpit navigation target can be constructed.
+Do **not** implement generic journal browsing, searching, filtering, pagination, follow/live mode, or a raw log table.
+
+Every finding should offer `View in Logs` when a stable Cockpit navigation target can be constructed. Inspect raw evidence in Cockpit Logs. Use only documented Logs filters (`service`, `tag`, `prio`, `start=boot`, and a short literal `grep` when that pattern is regex-safe). Prefer a broader reliable Logs destination over a fragile deep link.
+
+Empty state (no matches from implemented detectors):
+
+> No supported diagnostic findings detected for this boot.
+
+Do not say the system is healthy. This plugin only detects a defined subset of possible problems.
+
+OOM findings use warning severity: a kill was reported, but that does not prove physical RAM exhaustion was the sole cause. Kernel findings map journal priorities 0–2 (emerg/alert/crit) to error and priority 3 (err) to warning. Warnings (priority 4+) are out of scope.
+
+Journal queries are current-boot only, server-side filtered, line-bounded, and a snapshot. Do not poll the journal and do not load the persistent journal into the browser.
 
 ### Rules
 
-- show the exact scope used
+- show the exact scope used (current boot; implemented detectors only)
 - expose timestamps
-- avoid deduplicating unrelated messages merely because text is similar
-- if grouping repeated identical messages, show the count and allow expansion
+- group only identical kernel messages; do not fuzzy-merge distinct errors
 - never summarize away the original evidence
+- do not classify ordinary memory-pressure messages as OOM kills
+- do not include kernel warnings by default
+- do not label application errors as kernel findings
 
 ---
 
@@ -883,15 +893,16 @@ Add:
 - crash detail drawer
 - links to relevant logs where feasible
 
-### v0.3 — Journal diagnostics
+### v0.3 — System Findings
 
 Add:
 
-- priority 0–3 current-boot findings
-- kernel error category
-- OOM detection
-- repeated-event grouping
-- links to Cockpit Logs
+- `journalctl` capability
+- Findings page (not a journal browser)
+- conservative current-boot OOM kill detection
+- high-priority kernel events (emerg/alert/crit/err)
+- exact-message grouping for repeated kernel errors
+- links to Cockpit Logs as the raw evidence viewer
 
 ### v0.4 — systemd security
 

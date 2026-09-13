@@ -12,6 +12,7 @@ const EMPTY_CAPABILITIES: DiagnosticCapabilities = {
     systemdAnalyzeCriticalChain: false,
     systemctl: false,
     coredumpctl: false,
+    journalctl: false,
 };
 
 export function detectCapabilities(): Promise<DiagnosticCapabilities> {
@@ -39,6 +40,11 @@ async function probeCapabilities(): Promise<DiagnosticCapabilities> {
     caps.coredumpctl = coredumpctl.present;
     if (caps.systemdVersion === undefined && coredumpctl.version !== undefined)
         caps.systemdVersion = coredumpctl.version;
+
+    const journalctl = await probeVersionCommand("journalctl");
+    caps.journalctl = journalctl.present;
+    if (caps.systemdVersion === undefined && journalctl.version !== undefined)
+        caps.systemdVersion = journalctl.version;
 
     return caps;
 }

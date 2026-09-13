@@ -26,6 +26,7 @@ const capabilities: DiagnosticCapabilities = {
     systemdAnalyzeCriticalChain: true,
     systemctl: true,
     coredumpctl: true,
+    journalctl: false,
 };
 
 const bashDump: CoredumpEntry = {

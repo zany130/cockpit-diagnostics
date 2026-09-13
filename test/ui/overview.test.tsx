@@ -20,6 +20,10 @@ const { loadCoredumps } = vi.hoisted(() => ({
     loadCoredumps: vi.fn(),
 }));
 
+const { loadFindings } = vi.hoisted(() => ({
+    loadFindings: vi.fn(),
+}));
+
 vi.mock("../../src/providers/systemdAnalyze", () => ({
     loadBootSummary,
     loadCriticalChain,
@@ -34,6 +38,10 @@ vi.mock("../../src/providers/coredumps", () => ({
     loadCoredumps,
 }));
 
+vi.mock("../../src/providers/journal", () => ({
+    loadFindings,
+}));
+
 const capabilities: DiagnosticCapabilities = {
     systemdAnalyze: true,
     systemdAnalyzeTime: true,
@@ -42,6 +50,7 @@ const capabilities: DiagnosticCapabilities = {
     systemctl: true,
     systemdVersion: 255,
     coredumpctl: true,
+    journalctl: true,
 };
 
 const boot: BootSummary = {
@@ -72,10 +81,12 @@ describe("OverviewPage", () => {
         loadFailedUnits.mockReset();
         loadBlame.mockReset();
         loadCoredumps.mockReset();
+        loadFindings.mockReset();
         loadBootSummary.mockResolvedValue(boot);
         loadCriticalChain.mockResolvedValue([{ unit: "multi-user.target", activatedAtUs: 32_786_000, children: [] }]);
         loadFailedUnits.mockResolvedValue(failed);
         loadCoredumps.mockResolvedValue([]);
+        loadFindings.mockResolvedValue({ findings: [], truncated: false, incomplete: false });
     });
 
     it("renders boot facts and failed units without a health score", async () => {
@@ -89,7 +100,7 @@ describe("OverviewPage", () => {
         expect(screen.getByText("Foo Service")).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "View service" })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "View logs" })).toBeInTheDocument();
-        expect(screen.queryByText(/health score/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/Health:\s*\d/)).not.toBeInTheDocument();
         expect(screen.queryByRole("button", { name: /start/i })).not.toBeInTheDocument();
         expect(screen.queryByRole("button", { name: /restart/i })).not.toBeInTheDocument();
     });
@@ -110,6 +121,7 @@ describe("OverviewPage", () => {
         expect(loadBootSummary).toHaveBeenCalledTimes(2);
         expect(loadFailedUnits).toHaveBeenCalledTimes(2);
         expect(loadCoredumps).toHaveBeenCalledTimes(2);
+        expect(loadFindings).toHaveBeenCalledTimes(2);
     });
 
     it("keeps failed units visible when boot timing fails", async () => {
@@ -145,7 +157,7 @@ describe("OverviewPage", () => {
         render(<OverviewPage capabilities={capabilities} onRefresh={() => undefined} />);
         expect(await screen.findByRole("button", { name: "No coredumps this boot" })).toBeInTheDocument();
         expect(screen.getByText(/do not automatically mean the system is unhealthy/)).toBeInTheDocument();
-        expect(screen.queryByText(/health score/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/Health:\s*\d/)).not.toBeInTheDocument();
     });
 
     it("summarizes a coredump count and opens the Crashes page", async () => {
@@ -176,5 +188,74 @@ describe("OverviewPage", () => {
             />
         );
         expect(screen.getByText(/coredumpctl is not available/)).toBeInTheDocument();
+    });
+
+    it("summarizes zero findings without calling the system healthy", async () => {
+        render(<OverviewPage capabilities={capabilities} onRefresh={() => undefined} />);
+        expect(await screen.findByRole("button", { name: "No supported findings this boot" })).toBeInTheDocument();
+        expect(screen.getByText(/not a health score/)).toBeInTheDocument();
+        expect(screen.queryByText(/system unhealthy/i)).not.toBeInTheDocument();
+    });
+
+    it("summarizes finding counts and opens the Findings page", async () => {
+        const user = userEvent.setup();
+        loadFindings.mockResolvedValue({
+            findings: [
+                {
+                    id: "m1",
+                    category: "memory",
+                    severity: "warning",
+                    title: "Out-of-memory kill: firefox",
+                    summary: "kill",
+                    count: 1,
+                    source: "kernel",
+                },
+                {
+                    id: "k1",
+                    category: "kernel",
+                    severity: "warning",
+                    title: "amdgpu",
+                    summary: "err",
+                    count: 3,
+                    source: "kernel",
+                },
+                {
+                    id: "k2",
+                    category: "kernel",
+                    severity: "error",
+                    title: "ext4",
+                    summary: "err",
+                    count: 1,
+                    source: "kernel",
+                },
+            ],
+            truncated: false,
+            incomplete: false,
+        });
+        render(<OverviewPage capabilities={capabilities} onRefresh={() => undefined} />);
+        const summary = await screen.findByRole("button", { name: "3 findings this boot" });
+        expect(screen.getByText("1 memory")).toBeInTheDocument();
+        expect(screen.getByText("2 kernel")).toBeInTheDocument();
+        await user.click(summary);
+        expect(cockpit.location.path).toEqual(["findings"]);
+    });
+
+    it("keeps Boot and Crashes visible when the findings provider fails", async () => {
+        loadFindings.mockRejectedValue({ problem: "", message: "Failed to open journal", exit_status: 1 });
+        render(<OverviewPage capabilities={capabilities} onRefresh={() => undefined} />);
+        expect(await screen.findByText("Boot completed in 1 min 9.608 s")).toBeInTheDocument();
+        expect(await screen.findByText("foo.service")).toBeInTheDocument();
+        expect(await screen.findByRole("button", { name: "No coredumps this boot" })).toBeInTheDocument();
+        expect(screen.getByText("Command failed")).toBeInTheDocument();
+    });
+
+    it("explains a missing journalctl capability", () => {
+        render(
+            <OverviewPage
+                capabilities={{ ...capabilities, journalctl: false }}
+                onRefresh={() => undefined}
+            />
+        );
+        expect(screen.getByText(/journalctl is not available/)).toBeInTheDocument();
     });
 });

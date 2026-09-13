@@ -13,6 +13,10 @@ describe("routes", () => {
         expect(pageFromPath(["crashes"])).toBe("crashes");
     });
 
+    it("treats findings as the Findings page", () => {
+        expect(pageFromPath(["findings"])).toBe("findings");
+    });
+
     it("follows cockpit.location and hash updates", () => {
         cockpit.location.path = [];
         window.location.hash = "";
@@ -25,6 +29,9 @@ describe("routes", () => {
 
         cockpit.location.go(["crashes"]);
         expect(currentPage()).toBe("crashes");
+
+        cockpit.location.go(["findings"]);
+        expect(currentPage()).toBe("findings");
 
         cockpit.location.go([]);
         expect(currentPage()).toBe("overview");

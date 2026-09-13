@@ -42,6 +42,30 @@
     min-width: 0;
 }
 
+.diagnostics-finding {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pf-t--global--spacer--xs);
+    padding-block: var(--pf-t--global--spacer--sm);
+}
+
+.diagnostics-finding + .diagnostics-finding {
+    border-block-start: var(--pf-t--global--border--width--divider--default) solid var(--pf-t--global--border--color--default);
+}
+
+.diagnostics-finding-title {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--pf-t--global--spacer--sm);
+    align-items: center;
+    font-weight: var(--pf-t--global--font--weight--heading);
+}
+
+.diagnostics-finding-message {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
 .diagnostics-chain-node {
     display: inline-flex;
     flex-wrap: wrap;

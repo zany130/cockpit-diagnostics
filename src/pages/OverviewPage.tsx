@@ -17,9 +17,11 @@ import cockpit from "cockpit";
 import type { BootSummary } from "../types/boot";
 import type { CoredumpEntry } from "../types/crashes";
 import type { DiagnosticCapabilities, FailedUnit } from "../types/diagnostics";
+import type { FindingsSnapshot } from "../types/findings";
 import { loadBootSummary, loadCriticalChain } from "../providers/systemdAnalyze";
 import { loadFailedUnits } from "../providers/systemdUnits";
 import { loadCoredumps } from "../providers/coredumps";
+import { loadFindings } from "../providers/journal";
 import { formatDuration } from "../utils/duration";
 import { jumpToServices } from "../utils/cockpitLinks";
 import { goToPage } from "../app/routes";
@@ -41,12 +43,14 @@ export const OverviewPage = ({ capabilities, onRefresh, lastRefreshed }: {
     const chain = useAsyncProvider(loadCriticalChain, capabilities.systemdAnalyze && capabilities.systemdAnalyzeCriticalChain);
     const failed = useAsyncProvider(loadFailedUnits, capabilities.systemctl);
     const crashes = useAsyncProvider(loadCoredumps, capabilities.coredumpctl);
+    const findings = useAsyncProvider(loadFindings, capabilities.journalctl);
 
     const refreshAll = () => {
         boot.reload();
         chain.reload();
         failed.reload();
         crashes.reload();
+        findings.reload();
         onRefresh();
     };
 
@@ -89,6 +93,9 @@ export const OverviewPage = ({ capabilities, onRefresh, lastRefreshed }: {
                 </GridItem>
                 <GridItem md={6} xl={4}>
                     <CrashesOverviewCard capabilities={capabilities} crashes={crashes} />
+                </GridItem>
+                <GridItem md={6} xl={4}>
+                    <FindingsOverviewCard capabilities={capabilities} findings={findings} />
                 </GridItem>
             </Grid>
         </PageSection>
@@ -287,6 +294,85 @@ const CrashesOverviewCard = ({
             </CardBody>
             <CardFooter>
                 <Button variant="link" isInline onClick={() => goToPage("crashes")}>{_("Open Crashes page")}</Button>
+            </CardFooter>
+        </Card>
+    );
+};
+
+const FindingsOverviewCard = ({
+    capabilities,
+    findings,
+}: {
+    capabilities: DiagnosticCapabilities;
+    findings: ReturnType<typeof useAsyncProvider<FindingsSnapshot>>;
+}) => {
+    const list = findings.status === "ready" ? (findings.data?.findings ?? []) : [];
+    const memoryCount = list.filter(item => item.category === "memory").length;
+    const kernelCount = list.filter(item => item.category === "kernel").length;
+    const summary = findings.status === "ready"
+        ? (
+            list.length === 0
+                ? _("No supported findings this boot")
+                : cockpit.format(
+                    cockpit.ngettext("$0 finding this boot", "$0 findings this boot", list.length),
+                    list.length
+                )
+        )
+        : undefined;
+
+    return (
+        <Card isCompact>
+            <CardHeader>
+                <CardTitle>
+                    <Title headingLevel="h3" size="md">{_("Findings")}</Title>
+                </CardTitle>
+            </CardHeader>
+            <CardBody>
+                {!capabilities.journalctl
+                    ? (
+                        <CapabilityNotice>
+                            {_("journalctl is not available, so findings cannot be summarized.")}
+                        </CapabilityNotice>
+                    )
+                    : (
+                        <AsyncState
+                            status={findings.status}
+                            error={findings.error}
+                            loadingLabel={_("Loading findings")}
+                        >
+                            {summary && (
+                                <>
+                                    <Content component="p" className="diagnostics-overview-lead">
+                                        <Button variant="link" isInline onClick={() => goToPage("findings")}>
+                                            {summary}
+                                        </Button>
+                                    </Content>
+                                    {list.length > 0 && (
+                                        <HelperText>
+                                            {memoryCount > 0 && (
+                                                <HelperTextItem>
+                                                    {cockpit.format(_("$0 memory"), memoryCount)}
+                                                </HelperTextItem>
+                                            )}
+                                            {kernelCount > 0 && (
+                                                <HelperTextItem>
+                                                    {cockpit.format(_("$0 kernel"), kernelCount)}
+                                                </HelperTextItem>
+                                            )}
+                                        </HelperText>
+                                    )}
+                                    <HelperText>
+                                        <HelperTextItem>
+                                            {_("Only implemented detectors are counted. This is not a health score.")}
+                                        </HelperTextItem>
+                                    </HelperText>
+                                </>
+                            )}
+                        </AsyncState>
+                    )}
+            </CardBody>
+            <CardFooter>
+                <Button variant="link" isInline onClick={() => goToPage("findings")}>{_("Open Findings page")}</Button>
             </CardFooter>
         </Card>
     );

@@ -26,6 +26,7 @@ const capabilities: DiagnosticCapabilities = {
     systemdAnalyzeCriticalChain: true,
     systemctl: true,
     coredumpctl: false,
+    journalctl: false,
 };
 
 describe("BootPage", () => {

@@ -18,7 +18,7 @@ describe("detectCapabilities", () => {
         vi.restoreAllMocks();
     });
 
-    it("probes systemd-analyze, systemctl, and coredumpctl with a stable parsing environment", async () => {
+    it("probes systemd-analyze, systemctl, coredumpctl, and journalctl with a stable parsing environment", async () => {
         vi.mocked(cockpit.spawn).mockImplementation((argv: string[]) => {
             if (argv[0] === "systemd-analyze" && argv.includes("--help"))
                 return spawnOk(fixture("analyze-help.txt"));
@@ -27,6 +27,8 @@ describe("detectCapabilities", () => {
             if (argv[0] === "systemctl" && argv.includes("--version"))
                 return spawnOk(fixture("analyze-version.txt"));
             if (argv[0] === "coredumpctl" && argv.includes("--version"))
+                return spawnOk(fixture("analyze-version.txt"));
+            if (argv[0] === "journalctl" && argv.includes("--version"))
                 return spawnOk(fixture("analyze-version.txt"));
             return spawnFail("not-found", `${argv[0]}: not found`);
         });
@@ -39,15 +41,15 @@ describe("detectCapabilities", () => {
             systemdAnalyzeCriticalChain: true,
             systemctl: true,
             coredumpctl: true,
+            journalctl: true,
             systemdVersion: 255,
         });
-        expect(caps).not.toHaveProperty("journalctl");
         expect(caps).not.toHaveProperty("systemdAnalyzePlot");
         expect(caps).not.toHaveProperty("systemdAnalyzeSecurity");
 
         const commands = vi.mocked(cockpit.spawn).mock.calls.map(call => call[0][0]);
-        expect(commands).toEqual(expect.arrayContaining(["systemd-analyze", "systemctl", "coredumpctl"]));
-        expect(commands).not.toContain("journalctl");
+        expect(commands).toEqual(expect.arrayContaining(["systemd-analyze", "systemctl", "coredumpctl", "journalctl"]));
+        expect(commands).not.toContain("systemd-analyze plot");
 
         for (const call of vi.mocked(cockpit.spawn).mock.calls) {
             expect(call[0]).toContain("--no-pager");
@@ -66,6 +68,7 @@ describe("detectCapabilities", () => {
         expect(caps.systemdAnalyze).toBe(false);
         expect(caps.systemctl).toBe(true);
         expect(caps.coredumpctl).toBe(false);
+        expect(caps.journalctl).toBe(false);
     });
 
     it("keeps boot tools available when coredumpctl is missing", async () => {
@@ -81,5 +84,22 @@ describe("detectCapabilities", () => {
         expect(caps.coredumpctl).toBe(false);
         expect(caps.systemdAnalyze).toBe(true);
         expect(caps.systemctl).toBe(true);
+        expect(caps.journalctl).toBe(true);
+    });
+
+    it("keeps boot and crash tools available when journalctl is missing", async () => {
+        vi.mocked(cockpit.spawn).mockImplementation((argv: string[]) => {
+            if (argv[0] === "journalctl")
+                return spawnFail("not-found", "journalctl: not found");
+            if (argv[0] === "systemd-analyze" && argv.includes("--help"))
+                return spawnOk(fixture("analyze-help.txt"));
+            return spawnOk(fixture("analyze-version.txt"));
+        });
+
+        const caps = await detectCapabilities();
+        expect(caps.journalctl).toBe(false);
+        expect(caps.systemdAnalyze).toBe(true);
+        expect(caps.systemctl).toBe(true);
+        expect(caps.coredumpctl).toBe(true);
     });
 });

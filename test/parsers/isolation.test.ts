@@ -5,6 +5,9 @@ import { parseBlame } from "../../src/parsers/blame";
 import { parseCriticalChain } from "../../src/parsers/criticalChain";
 import { parseFailedUnits } from "../../src/parsers/failedUnits";
 import { parseCoredumpList } from "../../src/parsers/coredumps";
+import { parseJournalOutput } from "../../src/parsers/journal";
+import { detectKernelFindings } from "../../src/detectors/kernel";
+import { detectOomFindings } from "../../src/detectors/oom";
 import { fixture } from "../readFixture";
 
 describe("provider isolation at the data layer", () => {
@@ -14,9 +17,13 @@ describe("provider isolation at the data layer", () => {
         const chain = parseCriticalChain(fixture("critical-chain-normal.txt"));
         const failed = parseFailedUnits(fixture("failed-units-plain.txt"));
         const dumps = parseCoredumpList(fixture("coredump-list-one.txt"));
+        const journal = parseJournalOutput(fixture("journal-malformed.txt"));
         expect(blame.length).toBeGreaterThan(0);
         expect(chain[0].unit).toBe("graphical.target");
         expect(failed[0].unit).toBe("foo.service");
         expect(dumps[0].pid).toBe(6654);
+        expect(journal.entries.length).toBe(2);
+        expect(detectOomFindings(journal.entries)).toEqual([]);
+        expect(detectKernelFindings(parseJournalOutput(fixture("journal-kernel-err.txt")).entries).length).toBe(1);
     });
 });

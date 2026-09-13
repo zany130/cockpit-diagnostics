@@ -36,12 +36,20 @@ const { loadCoredumps } = vi.hoisted(() => ({
     loadCoredumps: vi.fn(),
 }));
 
+const { loadFindings } = vi.hoisted(() => ({
+    loadFindings: vi.fn(),
+}));
+
 vi.mock("../../src/providers/systemdUnits", () => ({
     loadFailedUnits,
 }));
 
 vi.mock("../../src/providers/coredumps", () => ({
     loadCoredumps,
+}));
+
+vi.mock("../../src/providers/journal", () => ({
+    loadFindings,
 }));
 
 const capabilities: DiagnosticCapabilities = {
@@ -51,6 +59,7 @@ const capabilities: DiagnosticCapabilities = {
     systemdAnalyzeCriticalChain: true,
     systemctl: true,
     coredumpctl: true,
+    journalctl: true,
 };
 
 describe("Application navigation", () => {
@@ -66,6 +75,7 @@ describe("Application navigation", () => {
         loadCriticalChain.mockResolvedValue([]);
         loadFailedUnits.mockResolvedValue([]);
         loadCoredumps.mockResolvedValue([]);
+        loadFindings.mockResolvedValue({ findings: [], truncated: false, incomplete: false });
     });
 
     it("switches from Overview to Boot when the Boot nav item is clicked", async () => {
@@ -87,5 +97,15 @@ describe("Application navigation", () => {
         await user.click(screen.getByRole("link", { name: "Crashes" }));
         expect(await screen.findByRole("heading", { name: "Crashes" })).toBeInTheDocument();
         expect(screen.getByText(/crash records, not a health score/)).toBeInTheDocument();
+    });
+
+    it("switches from Overview to Findings when the Findings nav item is clicked", async () => {
+        const user = userEvent.setup();
+        render(<Application />);
+
+        expect(await screen.findByRole("heading", { name: "Overview" })).toBeInTheDocument();
+        await user.click(screen.getByRole("link", { name: "Findings" }));
+        expect(await screen.findByRole("heading", { name: "Findings" })).toBeInTheDocument();
+        expect(screen.getByText(/not a journal browser/)).toBeInTheDocument();
     });
 });

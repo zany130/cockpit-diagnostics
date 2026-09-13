@@ -8,7 +8,7 @@
             "order": 85,
             "keywords": [
                 {
-                    "matches": ["boot", "systemd", "blame", "failed units", "critical chain", "crashes", "coredump"]
+                    "matches": ["boot", "systemd", "blame", "failed units", "critical chain", "crashes", "coredump", "findings", "oom", "kernel"]
                 }
             ]
         }

@@ -10,6 +10,9 @@ import bootId from "../test/fixtures/boot-id.txt";
 import coredumpList from "../test/fixtures/coredump-list-multiple.txt";
 import coredumpInfo from "../test/fixtures/coredump-info-normal.txt";
 import coredumpInfoNginx from "../test/fixtures/coredump-info-core-missing.txt";
+import journalKernel from "../test/fixtures/journal-kernel-grouped.txt";
+import journalOomKernel from "../test/fixtures/journal-oom-kernel.txt";
+import journalOomd from "../test/fixtures/journal-oom-oomd.txt";
 
 function ok(data: string) {
     return Object.assign(Promise.resolve(data), {
@@ -112,6 +115,19 @@ const cockpit = {
                 return ok(coredumpInfo);
             }
             return ok(coredumpList);
+        }
+        if (args[0] === "journalctl") {
+            if (args.includes("--version"))
+                return ok(analyzeVersion);
+            if (args.some(arg => arg.startsWith("--grep=")))
+                return ok(journalOomKernel);
+            if (args.some(arg => arg.includes("systemd-oomd.service")))
+                return ok(journalOomd);
+            if (args.some(arg => arg.startsWith("MESSAGE_ID=")))
+                return ok("");
+            if (args.includes("--dmesg"))
+                return ok(journalKernel);
+            return ok("");
         }
         return fail("not-found", args[0] + ": not found");
     },

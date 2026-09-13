@@ -12,6 +12,7 @@ import { detectCapabilities } from "./providers/capabilities";
 import { currentPage, goToPage, type DiagnosticsPage } from "./app/routes";
 import { BootPage } from "./pages/BootPage";
 import { CrashesPage } from "./pages/CrashesPage";
+import { FindingsPage } from "./pages/FindingsPage";
 import { OverviewPage } from "./pages/OverviewPage";
 
 const _ = cockpit.gettext;
@@ -84,6 +85,16 @@ export const Application = () => {
                         >
                             {_("Crashes")}
                         </NavItem>
+                        <NavItem
+                            to="#/findings"
+                            isActive={page === "findings"}
+                            onClick={event => {
+                                event.preventDefault();
+                                goToPage("findings");
+                            }}
+                        >
+                            {_("Findings")}
+                        </NavItem>
                     </NavList>
                 </Nav>
             </PageSection>
@@ -118,6 +129,13 @@ export const Application = () => {
             )}
             {capabilities && page === "crashes" && (
                 <CrashesPage
+                    capabilities={capabilities}
+                    onRefresh={markRefreshed}
+                    lastRefreshed={lastRefreshed}
+                />
+            )}
+            {capabilities && page === "findings" && (
+                <FindingsPage
                     capabilities={capabilities}
                     onRefresh={markRefreshed}
                     lastRefreshed={lastRefreshed}

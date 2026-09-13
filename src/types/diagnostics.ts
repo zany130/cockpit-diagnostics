@@ -4,19 +4,9 @@ export type DiagnosticCategory =
     | "boot"
     | "unit"
     | "crash"
-    | "journal"
     | "kernel"
     | "memory"
     | "security";
-
-export interface DiagnosticFinding {
-    severity: DiagnosticSeverity;
-    category: DiagnosticCategory;
-    title: string;
-    summary: string;
-    source: string;
-    evidence?: string[];
-}
 
 export interface FailedUnit {
     unit: string;
@@ -30,9 +20,8 @@ export interface FailedUnit {
 }
 
 /**
- * Capability matrix for implemented milestones only. v0.2 adds coredumpctl.
- * Do not add journalctl, plot, or security probes until those milestones
- * actually consume them.
+ * Capability matrix for implemented milestones only. v0.3 adds journalctl.
+ * Do not add plot or security probes until those milestones consume them.
  */
 export interface DiagnosticCapabilities {
     systemdAnalyze: boolean;
@@ -41,5 +30,6 @@ export interface DiagnosticCapabilities {
     systemdAnalyzeCriticalChain: boolean;
     systemctl: boolean;
     coredumpctl: boolean;
+    journalctl: boolean;
     systemdVersion?: number;
 }
