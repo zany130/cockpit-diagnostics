@@ -6,7 +6,7 @@ import { COMMAND_ENVIRON } from "../../src/utils/locale";
 import { loadSecurityDetails, loadSecuritySummaries } from "../../src/providers/security";
 import { ProviderError } from "../../src/types/providers";
 import { fixture } from "../readFixture";
-import { spawnFail, spawnOk } from "../helpers/spawn";
+import { spawnFail, spawnOk, spawnOkStreamConsumed } from "../helpers/spawn";
 
 function lastCall() {
     const calls = vi.mocked(cockpit.spawn).mock.calls;
@@ -39,6 +39,13 @@ describe("systemd-analyze security provider", () => {
         expect(lastCall()[1]?.superuser).toBeUndefined();
         expect(lastCall()[0]).not.toContain("--user");
         expect(lastCall()[0]).not.toContain("--offline=yes");
+    });
+
+    it("still parses security JSON when spawn uses Cockpit stream consumption", async () => {
+        vi.mocked(cockpit.spawn).mockImplementation(() => spawnOkStreamConsumed(fixture("security-list-normal.txt")));
+        const rows = await loadSecuritySummaries();
+        expect(rows).toHaveLength(4);
+        expect(rows[0]?.unit).toBe("systemd-journald.service");
     });
 
     it("requests JSON for one unit as a separate argv entry", async () => {

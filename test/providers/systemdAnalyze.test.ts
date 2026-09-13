@@ -6,7 +6,7 @@ import { COMMAND_ENVIRON } from "../../src/utils/locale";
 import { loadBlame, loadBootSummary, loadCriticalChain } from "../../src/providers/systemdAnalyze";
 import { ProviderError } from "../../src/types/providers";
 import { fixture } from "../readFixture";
-import { spawnFail, spawnOk } from "../helpers/spawn";
+import { spawnFail, spawnOk, spawnOkStreamConsumed } from "../helpers/spawn";
 
 function lastCall() {
     const calls = vi.mocked(cockpit.spawn).mock.calls;
@@ -29,6 +29,12 @@ describe("systemd-analyze providers", () => {
         expect(summary.totalUs).toBe(69_608_000);
         expect(lastCall()[0]).toEqual(["systemd-analyze", "--system", "--no-pager", "time"]);
         expect(lastCall()[1]?.environ).toEqual(expect.arrayContaining(COMMAND_ENVIRON));
+    });
+
+    it("still parses boot timing when spawn uses Cockpit stream consumption", async () => {
+        vi.mocked(cockpit.spawn).mockImplementation(() => spawnOkStreamConsumed(fixture("boot-time-normal.txt")));
+        const summary = await loadBootSummary();
+        expect(summary.totalUs).toBe(69_608_000);
     });
 
     it("invokes blame without a shell string", async () => {

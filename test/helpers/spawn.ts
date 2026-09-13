@@ -19,7 +19,7 @@ export function spawnOkStreamConsumed(data: string) {
     });
     return Object.assign(promise, {
         close() {},
-        stream(callback: (chunk: string) => void) {
+        stream(callback: (chunk: string) => number | void) {
             streamer = callback;
             return this;
         },

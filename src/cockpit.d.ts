@@ -14,7 +14,7 @@ declare module "cockpit" {
             directory?: string;
         }): Promise<string> & {
             close(problem?: string): void;
-            stream?(callback: (data: string) => void): unknown;
+            stream?(callback: (data: string) => number | void): unknown;
         };
         dbus(name: string, options?: { bus?: string }): {
             call(path: string, iface: string, method: string, args?: unknown[]): Promise<unknown[]>;

@@ -19,11 +19,38 @@ describe("runCommand", () => {
         await expect(runCommand(["echo", "hello"])).resolves.toBe("hello\n");
     });
 
-    it("uses streamed chunks when Cockpit resolves an empty string after stream()", async () => {
+    it("does not attach a streamer for ordinary diagnostic commands", async () => {
+        let streamAttached = false;
+        vi.mocked(cockpit.spawn).mockImplementation(() => {
+            const promise = Promise.resolve("Startup finished in 1.2s\n");
+            return Object.assign(promise, {
+                close() {},
+                stream() {
+                    streamAttached = true;
+                    return this;
+                },
+            });
+        });
+        await expect(runCommand(["systemd-analyze", "--system", "--no-pager", "time"]))
+                .resolves.toBe("Startup finished in 1.2s\n");
+        expect(streamAttached).toBe(false);
+    });
+
+    it("keeps ordinary command output when Cockpit would have consumed a streamer", async () => {
         vi.mocked(cockpit.spawn).mockImplementation(() =>
-            spawnOkStreamConsumed("ddedc358-8083-492d-bf01-483937b16622\n")
+            spawnOkStreamConsumed("Startup finished in 1.2s (kernel)\n")
         );
-        await expect(runCommand(["cat", "/proc/sys/kernel/random/boot_id"]))
-                .resolves.toBe("ddedc358-8083-492d-bf01-483937b16622\n");
+        await expect(runCommand(["systemd-analyze", "--system", "--no-pager", "time"]))
+                .resolves.toBe("Startup finished in 1.2s (kernel)\n");
+    });
+
+    it("uses streamed chunks for verify when Cockpit resolves an empty string after stream()", async () => {
+        vi.mocked(cockpit.spawn).mockImplementation(() =>
+            spawnOkStreamConsumed("/tmp/warn.service:6: Unknown key name 'MysteryKey'\n")
+        );
+        await expect(runCommand(
+            ["systemd-analyze", "--system", "--no-pager", "--man=no", "verify", "warn.service"],
+            { err: "out", outputOnFailure: true }
+        )).resolves.toBe("/tmp/warn.service:6: Unknown key name 'MysteryKey'\n");
     });
 });

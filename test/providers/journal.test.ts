@@ -13,7 +13,7 @@ import {
 } from "../../src/providers/journal";
 import { ProviderError } from "../../src/types/providers";
 import { fixture } from "../readFixture";
-import { spawnFail, spawnOk } from "../helpers/spawn";
+import { spawnFail, spawnOk, spawnOkStreamConsumed } from "../helpers/spawn";
 
 function lastJournalCall() {
     const calls = vi.mocked(cockpit.spawn).mock.calls.filter(call => call[0][0] === "journalctl");
@@ -91,6 +91,23 @@ describe("journal findings provider", () => {
         expect(calls.some(call => call[0].includes("--lines=" + String(OOMD_LINE_LIMIT)))).toBe(true);
         expect(calls.some(call => call[0].includes("--lines=" + String(CATALOG_LINE_LIMIT)))).toBe(true);
         expect(lastJournalCall()[0].filter(arg => arg.startsWith("MESSAGE_ID="))).toHaveLength(2);
+    });
+
+    it("still parses findings when spawn uses Cockpit stream consumption", async () => {
+        vi.mocked(cockpit.spawn).mockImplementation((argv: string[]) => {
+            if (isKernelPriorityQuery(argv))
+                return spawnOkStreamConsumed(fixture("journal-kernel-err.txt"));
+            if (isKernelOomQuery(argv))
+                return spawnOkStreamConsumed(fixture("journal-oom-kernel.txt"));
+            if (isOomdQuery(argv))
+                return spawnOkStreamConsumed(fixture("journal-oom-oomd.txt"));
+            if (isCatalogQuery(argv))
+                return spawnOkStreamConsumed("");
+            return spawnFail("not-found", "unexpected");
+        });
+        const snapshot = await loadFindings();
+        expect(snapshot.findings.some(item => item.category === "kernel")).toBe(true);
+        expect(snapshot.findings.some(item => item.category === "memory")).toBe(true);
     });
 
     it("treats empty output as no findings", async () => {

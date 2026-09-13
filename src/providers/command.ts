@@ -30,16 +30,26 @@ export async function runCommand(argv: string[], options?: RunCommandOptions): P
     });
 
     /*
-     * Cockpit spawn delivers stdout to `.stream()` when a streamer is
-     * attached, and then resolves the promise with "". v0.5 attached a
-     * streamer for verify and used `data ?? streamed`, which kept the empty
-     * string and dropped the real output. Prefer the promise result when it
-     * is non-empty (unit-test mocks); otherwise use the streamed buffer.
+     * Do not attach process.stream() for ordinary diagnostics.
+     *
+     * Cockpit documents that a stream handler consumes stdout, so
+     * process.then()/await then receives "". v0.5 registered a streamer on
+     * every spawn for verify, which emptied Boot, Crashes, Findings,
+     * Security, and plot on real Cockpit — not only boot-ID parsing.
+     *
+     * v0.4 collected stdout from the promise alone. Restore that unless we
+     * must keep bytes after a non-zero exit (systemd-analyze verify).
+     * If a streamer is attached, prefer a non-empty promise result, else
+     * the streamed buffer. A stream callback must return how many bytes it
+     * consumed or Cockpit may replay the same chunk.
      */
     let streamed = "";
-    process.stream?.(chunk => {
-        streamed += String(chunk);
-    });
+    if (options?.outputOnFailure) {
+        process.stream?.(chunk => {
+            streamed += String(chunk);
+            return typeof chunk === "string" ? chunk.length : 0;
+        });
+    }
 
     const timer = window.setTimeout(() => process.close("timeout"), timeoutMs);
     try {

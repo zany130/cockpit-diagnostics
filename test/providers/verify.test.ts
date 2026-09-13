@@ -6,7 +6,7 @@ import { COMMAND_ENVIRON } from "../../src/utils/locale";
 import { loadInstalledUnitFiles, verifyUnit } from "../../src/providers/verify";
 import { ProviderError } from "../../src/types/providers";
 import { fixture } from "../readFixture";
-import { spawnFail, spawnOk } from "../helpers/spawn";
+import { spawnFail, spawnOk, spawnOkStreamConsumed } from "../helpers/spawn";
 
 function lastCall() {
     const calls = vi.mocked(cockpit.spawn).mock.calls;
@@ -76,6 +76,13 @@ describe("systemd-analyze verify provider", () => {
         expect(lastCall()[1]?.superuser).toBeUndefined();
         expect(lastCall()[0]).not.toContain("--user");
         expect(lastCall()[0][5]).toBe("warn.service");
+    });
+
+    it("still parses verify findings when Cockpit stream consumes stdout", async () => {
+        vi.mocked(cockpit.spawn).mockImplementation(() => spawnOkStreamConsumed(fixture("verify-warning.txt")));
+        const result = await verifyUnit("warn.service");
+        expect(result.findings[0].severity).toBe("warning");
+        expect(result.findings[0].message).toMatch(/MysteryKey/);
     });
 
     it("parses findings when verify exits non-zero", async () => {

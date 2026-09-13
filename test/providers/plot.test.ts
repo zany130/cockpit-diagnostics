@@ -5,7 +5,7 @@ import cockpit from "cockpit";
 import { COMMAND_ENVIRON } from "../../src/utils/locale";
 import { loadBootPlot } from "../../src/providers/plot";
 import { fixture } from "../readFixture";
-import { spawnFail, spawnOk } from "../helpers/spawn";
+import { spawnFail, spawnOk, spawnOkStreamConsumed } from "../helpers/spawn";
 
 function lastCall() {
     const calls = vi.mocked(cockpit.spawn).mock.calls;
@@ -32,6 +32,12 @@ describe("systemd-analyze plot provider", () => {
         expect(lastCall()[0]).not.toContain("--user");
         expect(lastCall()[1]?.environ).toEqual(expect.arrayContaining(COMMAND_ENVIRON));
         expect(lastCall()[1]?.superuser).toBeUndefined();
+    });
+
+    it("still parses plot SVG when spawn uses Cockpit stream consumption", async () => {
+        vi.mocked(cockpit.spawn).mockImplementation(() => spawnOkStreamConsumed(fixture("plot-normal.txt")));
+        const plot = await loadBootPlot();
+        expect(plot.svg).toContain("foo.service");
     });
 
     it("rejects non-SVG output", async () => {
