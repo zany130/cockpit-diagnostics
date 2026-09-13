@@ -111,7 +111,7 @@ Use **Refresh** on a page to rerun that page's providers. The plugin does not po
 - Commands use argv arrays, never `sh -c`
 - The plugin does not request Cockpit superuser for diagnostic commands; it shows whatever the logged-in session can already read
 - Journal, coredump, and unit text is rendered as text, not HTML
-- `systemd-analyze plot` SVG is sanitized and shown as an `<img>` blob, not injected as live markup
+- `systemd-analyze plot` SVG is sanitized and shown as an `<img>` with a `data:` URL, not injected as live markup
 
 ## Known limitations
 

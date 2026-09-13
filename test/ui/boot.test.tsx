@@ -177,7 +177,7 @@ describe("BootPage", () => {
         await screen.findByRole("img", { name: "systemd boot timeline" });
         expect(document.querySelector(".diagnostics-boot-plot-frame")).toBeTruthy();
         const img = screen.getByRole("img", { name: "systemd boot timeline" });
-        expect(img).toHaveAttribute("src", "blob:diagnostics-boot-plot");
+        expect(img.getAttribute("src")).toMatch(/^data:image\/svg\+xml;charset=utf-8,/);
     });
 
     it("regenerates the plot only on refresh", async () => {

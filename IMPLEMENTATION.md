@@ -529,7 +529,8 @@ SVG security:
 
 - treat plot output as untrusted even though it is locally generated
 - sanitize to an element/attribute allowlist; strip script, foreignObject, iframe, anchors, event handlers, javascript/data hrefs, `@import`, and `url()` in CSS
-- display the sanitized SVG as `image/svg+xml` through a blob URL in an `<img>`
+- display the sanitized SVG as an `<img>` whose `src` is a `data:image/svg+xml` URL
+- do not use `blob:` / `URL.createObjectURL()`: Cockpit's default CSP is `img-src 'self' data:` (plus the ws origin) and blocks `blob:`
 - do not inject SVG with `dangerouslySetInnerHTML` or other raw HTML APIs
 
 SVG as an image cannot run script or navigate the Cockpit origin. Sanitization is defense in depth.

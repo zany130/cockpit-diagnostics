@@ -11,6 +11,7 @@ import cockpit from "cockpit";
 
 import type { DiagnosticCapabilities } from "../types/diagnostics";
 import type { BootPlot } from "../types/plot";
+import { bootPlotImageSrc } from "../utils/bootPlotImage";
 import { AsyncState } from "./AsyncState";
 import { CapabilityNotice } from "./CapabilityNotice";
 import { useAsyncProvider } from "../app/useAsyncProvider";
@@ -60,15 +61,9 @@ const BootPlotView = ({ plot }: { plot: BootPlot }) => {
     const [mode, setMode] = useState<"fit" | "reset">("fit");
     const [frameWidth, setFrameWidth] = useState(0);
 
-    // Isolation: sanitized SVG is shown as image/svg+xml through a blob URL.
-    // SVG loaded as <img> cannot run script or navigate the Cockpit origin.
-    const objectUrl = useMemo(() => {
-        return URL.createObjectURL(new Blob([plot.svg], { type: "image/svg+xml" }));
-    }, [plot.svg]);
-
-    useEffect(() => {
-        return () => URL.revokeObjectURL(objectUrl);
-    }, [objectUrl]);
+    // Isolation: sanitized SVG as <img>. Cockpit CSP allows data: and not
+    // blob:, so this must be a data URL — not createObjectURL().
+    const imageSrc = useMemo(() => bootPlotImageSrc(plot.svg), [plot.svg]);
 
     useEffect(() => {
         const node = frameRef.current;
@@ -110,7 +105,7 @@ const BootPlotView = ({ plot }: { plot: BootPlot }) => {
                     <img
                         className="diagnostics-boot-plot"
                         alt={_("systemd boot timeline")}
-                        src={objectUrl}
+                        src={imageSrc}
                         width={plot.width}
                         height={plot.height}
                         style={{

@@ -12,8 +12,8 @@ class ResizeObserverStub {
 if (typeof window !== "undefined" && !window.ResizeObserver)
     window.ResizeObserver = ResizeObserverStub;
 
-// jsdom's createObjectURL is often unimplemented. The Boot timeline uses a
-// blob URL plus <img>, so tests need a stable stub.
+// jsdom's createObjectURL is often unimplemented. Boot timeline uses a
+// data: URL (Cockpit CSP blocks blob:), but keep a stub if anything still calls it.
 URL.createObjectURL = () => "blob:diagnostics-boot-plot";
 URL.revokeObjectURL = () => undefined;
 

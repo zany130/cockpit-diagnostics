@@ -32,6 +32,8 @@ describe("systemd-analyze plot provider", () => {
         expect(lastCall()[0]).not.toContain("--user");
         expect(lastCall()[1]?.environ).toEqual(expect.arrayContaining(COMMAND_ENVIRON));
         expect(lastCall()[1]?.superuser).toBeUndefined();
+        expect(lastCall()[1]?.err).toBe("message");
+        expect(lastCall()[1]?.err).not.toBe("out");
     });
 
     it("still parses plot SVG when spawn uses Cockpit stream consumption", async () => {
